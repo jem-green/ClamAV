@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<clamav>
+  <interval>60</interval>
+  <node>AA</node>
+  <host>127.0.0.1</host>
+  <port>694</port>
+</clamav>
