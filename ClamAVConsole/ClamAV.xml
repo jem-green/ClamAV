@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<clamav>
+  <daemon>yes</daemon>
+  <database></database>
+  <confguration></confguration>
+  <log></log>
+  <scans>
+    <scan id="dive_d">
+      <startdate format="dd-MMM-yyyy">05-dec-2018</startdate>
+      <starttime format="HH:mm:ss">01:00:00</starttime>
+      <schedule>days</schedule>
+      <timeout>1</timeout>
+      <path>d:\</path>
+    </scan>
+  </scans>
+  <forwarders>
+    <forwarder id="syslog">
+      <type>SYSLOG</type>
+      <host>earth</host>
+      <protocol>rfc3164</protocol>
+      <severity>Emergency</severity>
+      <facility>Kernel</facility>
+      <port>514</port>
+    </forwarder>
+  </forwarders>
+</clamav>

@@ -116,7 +116,7 @@ namespace ClamAVLibrary
                                         switch (element)
                                         {
                                             #region ClamAV
-                                            case "cardiac":
+                                            case "clamav":
                                                 {
                                                    
                                                     stack.Push(current);

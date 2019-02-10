@@ -8,7 +8,10 @@ using log4net;
 
 namespace ClamAVLibrary
 {
-    class Clamd
+    /// <summary>
+    /// Wrapper class to manage and launch clamd
+    /// </summary>
+    public class Clamd
     {
         #region Variables
 
@@ -27,9 +30,13 @@ namespace ClamAVLibrary
         string _logPath = "";
         string _logFilenamePath = "";
         string _configFilenamePath = "";
-        int _interval = 86400; // Every day 24*60*60* seconds
+        long _timeout = 86400;      // Every day 24 x 60 x 60* seconds
+        int _interval = 86400;      // Every day 24*60*60* seconds
+        UnitType _units = UnitType.day;    // 
+        bool _background = true;    // Run in the background
+        int _port = 3310;           // Default clamAV port
 
-        public enum Location
+        public enum Location : int
         {
             Program = 0,
             App = 1,
@@ -37,11 +44,32 @@ namespace ClamAVLibrary
             Roaming =3
         }
 
+        public enum UnitType : int
+        {
+            second = 0,
+            minute = 1,
+            hour = 2,
+            day = 3,
+            week = 4,
+            month = 5,
+            year = 6
+        }
+
         public struct Setting
         {
+            public enum Type
+            {
+                None = -1,
+                String = 0,
+                Number = 1,
+                Value = 2,
+                YesNo = 3
+            }
+
             string _key;
             //object _default;
             object _value;
+            Type _format;
 
             //public Setting(string key, object @default, object value)
             //{
@@ -54,6 +82,14 @@ namespace ClamAVLibrary
             {
                 _key = key;
                 _value = value;
+                _format = Type.None;
+            }
+
+            public Setting(string key, object value, Type format)
+            {
+                _key = key;
+                _value = value;
+                _format = format;
             }
 
             public string Key
@@ -79,63 +115,85 @@ namespace ClamAVLibrary
                     _value = value;
                 }
             }
+
+            public Type Format
+            {
+                get
+                {
+                    return (_format);
+                }
+                set
+                {
+                    _format = value;
+                }
+            }
         }
 
         #endregion
         #region Constructors
-        public Clamd(Location location)
+
+        public Clamd(Location location) : this(location, 0)
         {
-            string path = "";
+        }
+
+        public Clamd(Location location, int port)
+        {
+			log.Debug("In Clamd()");
+            if (port != 0)
+            {
+                this._port = port;
+            }
+            string basePath = "";
 
             switch (location)
             {
                 case Location.App:
                     {
-                        path = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + Path.DirectorySeparatorChar + "ClamAV";
-                        if (!Directory.Exists(path))
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        if (!Directory.Exists(basePath))
                         {
-                            Directory.CreateDirectory(path);
+                            Directory.CreateDirectory(basePath);
                         }
                         break;
                     }
                 case Location.Program:
                     {
-                        path = System.Reflection.Assembly.GetExecutingAssembly().Location;
-                        int pos = path.LastIndexOf('\\');
-                        path = path.Substring(0, pos);
+                        basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        int pos = basePath.LastIndexOf('\\');
+                        basePath = basePath.Substring(0, pos);
                         break;
                     }
                 case Location.Local:
                     {
-                        path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + Path.DirectorySeparatorChar + "ClamAV";
-                        if (!Directory.Exists(path))
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        if (!Directory.Exists(basePath))
                         {
-                            Directory.CreateDirectory(path);
+                            Directory.CreateDirectory(basePath);
                         }
                         break;
                     }
                 case Location.Roaming:
                     {
-                        path = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + Path.DirectorySeparatorChar + "ClamAV";
-                        if (!Directory.Exists(path))
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        if (!Directory.Exists(basePath))
                         {
-                            Directory.CreateDirectory(path);
+                            Directory.CreateDirectory(basePath);
                         }
                         break;
                     }
             }
-            _databasePath = path + Path.DirectorySeparatorChar + "database";
+            _databasePath = basePath + System.IO.Path.DirectorySeparatorChar + "database";
             if (!Directory.Exists(_databasePath))
             {
                 Directory.CreateDirectory(_databasePath);
             }
-            _logPath = path + Path.DirectorySeparatorChar + "logs";
+            _logPath = basePath + System.IO.Path.DirectorySeparatorChar + "logs";
             if (!Directory.Exists(_logPath))
             {
                 Directory.CreateDirectory(_logPath);
             }
-            _logFilenamePath = _logPath + Path.DirectorySeparatorChar + "clamd.log";
-            _configFilenamePath = path + Path.DirectorySeparatorChar + "clamd.conf";
+            _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamd.log";
+            _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamd.conf";
 
             _settings = new List<Setting>();
             _settings.Add(new Setting("AlgorithmicDetection", null));
@@ -161,7 +219,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("FollowDirectorySymlinks", null));
             _settings.Add(new Setting("FollowFileSymlinks", null));
             _settings.Add(new Setting("ForceToDisk", null));
-            _settings.Add(new Setting("Foreground", null));
+            _settings.Add(new Setting("Foreground", !_background, Setting.Type.YesNo));
             _settings.Add(new Setting("HeuristicScanPrecedence", null));
             _settings.Add(new Setting("IdleTimeout", null));
             _settings.Add(new Setting("IncludePUA", null));
@@ -240,14 +298,27 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("StructuredSSNFormatNormal", null));
             _settings.Add(new Setting("StructuredSSNFormatStripped", null));
             _settings.Add(new Setting("TCPAddr", null));
-            _settings.Add(new Setting("TCPSocket", null));
+            _settings.Add(new Setting("TCPSocket", 3310,Setting.Type.Value));
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));
             _settings.Add(new Setting("VirusEvent", null));
+            log.Debug("Out Clamd()");
         }
 
         #endregion
         #region Properties
+
+        public int Port
+        {
+            get
+            {
+                return (_port);
+            }
+            set
+            {
+                _port = value;
+            }
+        }
 
         public List<Setting> Config
         {
@@ -261,7 +332,6 @@ namespace ClamAVLibrary
             }
         }
 
-
         public int Interval
         {
             get
@@ -271,6 +341,41 @@ namespace ClamAVLibrary
             set
             {
                 _interval = value;
+            }
+        }
+
+        public UnitType Units
+        {
+            get
+            {
+                return (_units);
+            }
+            set
+            {
+                _units = value;
+            }
+        }
+        public bool IsBackground
+		{
+            get
+            {
+                return (_background);
+            }
+            set
+            {
+                _background = value;
+            }
+        }
+		
+		public long Timeout
+        {
+            get
+            {
+                return (_timeout);
+            }
+            set
+            {
+                _timeout = value;
             }
         }
 
@@ -326,8 +431,10 @@ namespace ClamAVLibrary
         {
             return(WriteConfig(true));
         }
+
         public bool WriteConfig(bool overwrite)
         {
+            log.Debug("In WriteConfig()");
             bool written = false;
 
             StringWriter config = new StringWriter();
@@ -336,18 +443,58 @@ namespace ClamAVLibrary
                 if (setting.Value == null)
                 {
                     config.Write("# ");
-                    config.WriteLine(setting.Key + " ");
+                    config.WriteLine(setting.Key);
                 }
                 else
                 {
                     config.Write(setting.Key + " ");
-                    if (setting.Value.GetType() == typeof(string))
+                    if (setting.Format != Setting.Type.None)
                     {
-                        config.WriteLine("\"" + setting.Value + "\"");
+                        switch (setting.Format)
+                        {
+                            case Setting.Type.Value:
+                                {
+                                    config.WriteLine(setting.Value);
+                                    break;
+                                }
+                            case Setting.Type.Number:
+                                {
+                                    config.WriteLine(setting.Value);
+                                    break;
+                                }
+                            case Setting.Type.String:
+                                {
+                                    config.WriteLine("\"" + setting.Value + "\"");
+                                    break;
+                                }
+                            case Setting.Type.YesNo:
+                                {
+                                    if (Convert.ToBoolean(setting.Value) == true)
+                                    {
+                                        config.WriteLine("yes");
+                                    }
+                                    else
+                                    {
+                                        config.WriteLine("no");
+                                    }
+                                    break;
+                                }
+                        }
                     }
                     else
                     {
-                        config.WriteLine(setting.Value);
+                        if (setting.Value.GetType() == typeof(string))
+                        {
+                            config.WriteLine("\"" + setting.Value + "\"");
+                        }
+                        else if (setting.Value.GetType() == typeof(bool))
+                        {
+                            config.WriteLine(setting.Value);
+                        }
+                        else
+                        {
+                            config.WriteLine(setting.Value);
+                        }
                     }
                 }
             }
@@ -379,7 +526,7 @@ namespace ClamAVLibrary
             {
                 log.Error(ex.ToString());
             }
-
+            log.Debug("Out WriteConfig()");
             return (written);
         }
 
@@ -454,6 +601,32 @@ namespace ClamAVLibrary
             log.Debug("Out Dispose()");
         }
         #endregion
+
+        #region Events
+
+        private void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
+        {
+            if ((outputData != null) && (outputData.Data != null))
+            {
+                if (outputData.Data.Trim() != "")
+                {
+                    log.Info("Output=" + outputData.Data);
+                }
+            }
+        }
+
+        private void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
+        {
+            if ((errorData != null) && (errorData.Data != null))
+            {
+                if (errorData.Data.Trim() != "")
+                {
+                    log.Error("Error=" + errorData.Data);
+                }
+            }
+        }
+
+        #endregion
         #region Private
 
         /// <summary>
@@ -465,7 +638,14 @@ namespace ClamAVLibrary
 
             try
             {
-                ClamdLoop();
+                if (_background == true)
+                {
+                    LaunchClamd();
+                }
+                else
+                {
+                    ClamdLoop();
+                }
             }
             catch (Exception e)
             {
@@ -476,20 +656,21 @@ namespace ClamAVLibrary
             log.Debug("Out MonitorThread()");
         }
         /// <summary>
-        /// 
+        /// Wait for a specific interval before launching clamd
         /// </summary>
         private void ClamdLoop()
         {
-            log.Debug("InClamdLoop()");
+            log.Debug("In ClamdLoop()");
 
             // process heartbeats at the defined intervals
 
             signal = new AutoResetEvent(false);
             _running = true;
 
+            int sleepFor = _interval * 1000; // need to convert to milliseconds
             do
             {
-                signal.WaitOne(_interval * 1000);
+                signal.WaitOne(sleepFor);
                 // run freshclam
                 if (_downloading == false)
                 {
@@ -502,6 +683,9 @@ namespace ClamAVLibrary
             log.Debug("Out ClamdLoop()");
         }
 
+        /// <summary>
+        /// Launch the clamd within a process
+        /// </summary>
         private void LaunchClamd()
         {
             log.Debug("In LaunchClamd()");
@@ -512,7 +696,7 @@ namespace ClamAVLibrary
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
 
-            startInfo.FileName = "frclam.exe";   // Assume that clamAV is installed in the same location
+            startInfo.FileName = "clamd.exe";   // Assume that clamAV is installed in the same location
             startInfo.Arguments = "--config-file " + _configFilenamePath;
             startInfo.CreateNoWindow = false;
             startInfo.UseShellExecute = false;
@@ -526,29 +710,22 @@ namespace ClamAVLibrary
 
             proc.EnableRaisingEvents = true;
             proc.StartInfo = startInfo;
-            proc.Start();
-            proc.BeginOutputReadLine();
-            proc.BeginErrorReadLine();
-
+            try
+            {
+            	proc.Start();
+                log.Info(startInfo.FileName + " " + startInfo.Arguments);
+            	proc.BeginOutputReadLine();
+            	proc.BeginErrorReadLine();
+            }
+            catch(Exception e)
+            {
+                log.Error(e.ToString());
+            }
             _downloading = true;
             log.Debug("Out LaunchClamd()");
         }
-        #endregion
-        private void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
-        {
-            log.Info("Output=" + outputData.Data);
-        }
 
-        private void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
-        {
-            if (errorData != null)
-            {
-                if (errorData.Data != "")
-                {
-                    log.Error("Error=" + errorData.Data);
-                }
-            }
-        }
+        #endregion
     }
 
     /*

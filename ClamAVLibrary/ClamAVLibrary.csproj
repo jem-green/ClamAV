@@ -41,6 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Component.cs" />
     <Compile Include="Beat.cs" />
     <Compile Include="Clamd.cs" />
     <Compile Include="ClamdScan.cs" />
@@ -49,7 +50,6 @@
     <Compile Include="ClamAV.cs" />
     <Compile Include="FreshClam.cs" />
     <Compile Include="INotify.cs" />
-    <Compile Include="KeyValueDb.cs" />
     <Compile Include="Message.cs" />
     <Compile Include="Node.cs" />
     <Compile Include="Parameters.cs" />

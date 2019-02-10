@@ -31,10 +31,12 @@ namespace ClamAVLibrary
         string _filePath;
         DateTime _startDate;
         TimeSpan _startTime;
-        long _timeout = 86400;      // Every day 24 x 60 x 60* seconds
-        int _interval = 3600;      // Every hour 60 x 60 seconds
+        long _timeout = 86400;              // Every day 24 x 60 x 60* seconds
+        int _interval = 3600;               // Every hour 60 x 60 seconds
+        UnitType _units = UnitType.day;    // 
+        bool _background = true;            // Run in the background
 
-        public enum Location
+        public enum Location : int
         {
             Program = 0,
             App = 1,
@@ -42,11 +44,31 @@ namespace ClamAVLibrary
             Roaming =3
         }
 
+        public enum UnitType : int
+        {
+            second = 0,
+            minute = 1,
+            hour = 2,
+            day = 3,
+            week = 4,
+            month = 5,
+            year = 6
+        }
+
         public struct Setting
         {
+            public enum Type
+            {
+                None = -1,
+                String = 0,
+                Number = 1,
+                Value = 2,
+                YesNo = 3
+            }
             string _key;
             //object _default;
             object _value;
+            Type _format;
 
             //public Setting(string key, object @default, object value)
             //{
@@ -59,6 +81,14 @@ namespace ClamAVLibrary
             {
                 _key = key;
                 _value = value;
+                _format = Type.None;
+            }
+
+            public Setting(string key, object value, Type format)
+            {
+                _key = key;
+                _value = value;
+                _format = format;
             }
 
             public string Key
@@ -84,6 +114,18 @@ namespace ClamAVLibrary
                     _value = value;
                 }
             }
+
+            public Type Format
+            {
+                get
+                {
+                    return (_format);
+                }
+                set
+                {
+                    _format = value;
+                }
+            }
         }
 
         #endregion
@@ -91,6 +133,7 @@ namespace ClamAVLibrary
 
         public ClamdScan(Location location, string path)
         {
+            log.Debug("In ClamdScan()");
             _path = path;
             _startDate = new DateTime();
             _startTime = new TimeSpan(_startDate.Hour, _startDate.Minute, _startDate.Second);
@@ -253,6 +296,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));
             _settings.Add(new Setting("VirusEvent", null));
+            log.Debug("Out ClamdScan()");
         }
 
         #endregion
@@ -294,6 +338,18 @@ namespace ClamAVLibrary
             }
         }
 
+        public UnitType Units
+        {
+            get
+            {
+                return (_units);
+            }
+            set
+            {
+                _units = value;
+            }
+        }
+
         public string Path
         {
             get
@@ -314,7 +370,19 @@ namespace ClamAVLibrary
             }
             set
             {
-                _startDate = System.Convert.ToDateTime(value);
+                    _startDate = System.Convert.ToDateTime(value);
+            }
+        }
+
+		public bool IsBackground
+		{
+            get
+            {
+                return (_background);
+            }
+            set
+            {
+                _background = value;
             }
         }
 
@@ -354,6 +422,7 @@ namespace ClamAVLibrary
                 _timeout = value;
             }
         }
+
 
         #endregion
         #region Methods
@@ -407,8 +476,10 @@ namespace ClamAVLibrary
         {
             return(WriteConfig(true));
         }
+		
         public bool WriteConfig(bool overwrite)
         {
+            log.Debug("In WriteConfig()");
             bool written = false;
 
             StringWriter config = new StringWriter();
@@ -417,18 +488,58 @@ namespace ClamAVLibrary
                 if (setting.Value == null)
                 {
                     config.Write("# ");
-                    config.WriteLine(setting.Key + " ");
+                    config.WriteLine(setting.Key);
                 }
                 else
                 {
                     config.Write(setting.Key + " ");
-                    if (setting.Value.GetType() == typeof(string))
+                    if (setting.Format != Setting.Type.None)
                     {
-                        config.WriteLine("\"" + setting.Value + "\"");
+                        switch (setting.Format)
+                        {
+                            case Setting.Type.Value:
+                                {
+                                    config.WriteLine(setting.Value);
+                                    break;
+                                }
+                            case Setting.Type.Number:
+                                {
+                                    config.WriteLine(setting.Value);
+                                    break;
+                                }
+                            case Setting.Type.String:
+                                {
+                                    config.WriteLine("\"" + setting.Value + "\"");
+                                    break;
+                                }
+                            case Setting.Type.YesNo:
+                                {
+                                    if (Convert.ToBoolean(setting.Value) == true)
+                                    {
+                                        config.WriteLine("yes");
+                                    }
+                                    else
+                                    {
+                                        config.WriteLine("no");
+                                    }
+                                    break;
+                                }
+                        }
                     }
                     else
                     {
-                        config.WriteLine(setting.Value);
+                        if (setting.Value.GetType() == typeof(string))
+                        {
+                            config.WriteLine("\"" + setting.Value + "\"");
+                        }
+                        else if (setting.Value.GetType() == typeof(bool))
+                        {
+                            config.WriteLine(setting.Value);
+                        }
+                        else
+                        {
+                            config.WriteLine(setting.Value);
+                        }
                     }
                 }
             }
@@ -460,7 +571,7 @@ namespace ClamAVLibrary
             {
                 log.Error(ex.ToString());
             }
-
+            log.Debug("Out WriteConfig()");
             return (written);
         }
 
@@ -535,6 +646,32 @@ namespace ClamAVLibrary
             log.Debug("Out Dispose()");
         }
         #endregion
+
+        #region Events
+
+        private void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
+        {
+            if ((outputData != null) && (outputData.Data != null))
+            {
+                if (outputData.Data.Trim() != "")
+                {
+                    log.Info("Output=" + outputData.Data);
+                }
+            }
+        }
+
+        private void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
+        {
+            if ((errorData != null) && (errorData.Data != null))
+            {
+                if (errorData.Data.Trim() != "")
+                {
+                    log.Error("Error=" + errorData.Data);
+                }
+            }
+        }
+
+        #endregion
         #region Private
 
         /// <summary>
@@ -546,7 +683,14 @@ namespace ClamAVLibrary
 
             try
             {
-                ClamdscanLoop();
+                if (_background == true)
+                {
+                    LaunchClamdscan();
+                }
+                else
+                {
+                    ClamdscanLoop();
+                }
             }
             catch (Exception e)
             {
@@ -558,7 +702,7 @@ namespace ClamAVLibrary
         }
 
         /// <summary>
-        /// 
+        /// Wait for a specific amount of time before launching clamscan
         /// </summary>
         private void ClamdscanLoop()
         {
@@ -607,6 +751,9 @@ namespace ClamAVLibrary
             log.Debug("Out ClamdscanLoop()");
         }
 
+        /// <summary>
+        /// Launch the clamdscan within a process
+        /// </summary>
         private void LaunchClamdscan()
         {
             log.Debug("In LaunchClamdscan()");
@@ -617,7 +764,7 @@ namespace ClamAVLibrary
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
 
-            startInfo.FileName = "freshclam.exe";   // Assume that clamAV is installed in the same location
+            startInfo.FileName = "clamdscan.exe";   // Assume that clamAV is installed in the same location
             startInfo.Arguments = "--config-file " + _configFilenamePath + " " + _filePath;
             startInfo.CreateNoWindow = false;
             startInfo.UseShellExecute = false;
@@ -631,28 +778,58 @@ namespace ClamAVLibrary
 
             proc.EnableRaisingEvents = true;
             proc.StartInfo = startInfo;
-            proc.Start();
-            proc.BeginOutputReadLine();
-            proc.BeginErrorReadLine();
+            try
+            {
+                proc.Start();
+                log.Info(startInfo.FileName + " " + startInfo.Arguments);
+                proc.BeginOutputReadLine();
+                proc.BeginErrorReadLine();
+            }
+            catch(Exception e)
+            {
+                log.Error(e.ToString());
+            }
 
             _downloading = true;
-        }
-        #endregion
-        private void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
-        {
-            log.Info("Output=" + outputData.Data);
+
+            log.Debug("Out LaunchClamdscan()");
         }
 
-        private void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
+        long TimeConvert(UnitType schedule, long timeout)
         {
-            if (errorData != null)
+            log.Debug("In TimeConvert()");
+            long seconds = timeout;
+
+            // convert to seconds
+
+            switch (schedule)
             {
-                if (errorData.Data != "")
-                {
-                    log.Error("Error=" + errorData.Data);
-                }
+                case UnitType.minute:
+                    {
+                        seconds = timeout * 60;
+                    }
+                    break;
+                case UnitType.hour:
+                    {
+                        seconds = timeout * 3600;
+                    }
+                    break;
+                case UnitType.day:
+                    {
+                        seconds = timeout * 24 * 3600;
+                    }
+                    break;
+                case UnitType.week:
+                    {
+                        seconds = timeout * 7 * 24 * 3600;
+                    }
+                    break;
             }
+            log.Debug("Out TimeConvert()");
+            return (seconds);
         }
+
+        #endregion
     }
 
     /*
@@ -682,9 +859,4 @@ namespace ClamAVLibrary
     --fdpass                           Pass filedescriptor to clamd (useful if clamd is running as a different user)
     --stream                           Force streaming files to clamd (for debugging and unit testing)
      */
-
-    /*
-     * 
-     */
-
 }
