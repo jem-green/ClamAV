@@ -8,132 +8,27 @@ using log4net;
 
 namespace ClamAVLibrary
 {
-    public class ClamdScan
+    /// <summary>
+    /// Wrapper class to manage and launch clamdscan
+    /// </summary>
+    public class ClamdScan : Components
     {
         #region Variables
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        AutoResetEvent signal;
-        private object _threadLock = new object();
-        private Thread _thread;
-        private bool _disposed = false;
-        private ManualResetEvent _eventTerminate = new ManualResetEvent(false);
-        private bool _running = false;
-        private bool _downloading = false;
 
-        List<Setting> _settings = null;
-        string _path = "";
-        string _databasePath = "";
-        string _logPath = "";
-        string _logFilenamePath = "";
-        string _configFilenamePath = "";
-
-        string _filePath;
-        DateTime _startDate;
-        TimeSpan _startTime;
-        long _timeout = 86400;              // Every day 24 x 60 x 60* seconds
-        int _interval = 3600;               // Every hour 60 x 60 seconds
-        UnitType _units = UnitType.day;    // 
-        bool _background = true;            // Run in the background
-
-        public enum Location : int
-        {
-            Program = 0,
-            App = 1,
-            Local =2,
-            Roaming =3
-        }
-
-        public enum UnitType : int
-        {
-            second = 0,
-            minute = 1,
-            hour = 2,
-            day = 3,
-            week = 4,
-            month = 5,
-            year = 6
-        }
-
-        public struct Setting
-        {
-            public enum Type
-            {
-                None = -1,
-                String = 0,
-                Number = 1,
-                Value = 2,
-                YesNo = 3
-            }
-            string _key;
-            //object _default;
-            object _value;
-            Type _format;
-
-            //public Setting(string key, object @default, object value)
-            //{
-            //    _key = key;
-            //    _default = @default;
-            //    _value = value;
-            //}
-
-            public Setting(string key, object value)
-            {
-                _key = key;
-                _value = value;
-                _format = Type.None;
-            }
-
-            public Setting(string key, object value, Type format)
-            {
-                _key = key;
-                _value = value;
-                _format = format;
-            }
-
-            public string Key
-            {
-                get
-                {
-                    return (_key);
-                }
-                set
-                {
-                    _key = value;
-                }
-            }
-
-            public object Value
-            {
-                get
-                {
-                    return (_value);
-                }
-                set
-                {
-                    _value = value;
-                }
-            }
-
-            public Type Format
-            {
-                get
-                {
-                    return (_format);
-                }
-                set
-                {
-                    _format = value;
-                }
-            }
-        }
 
         #endregion
         #region Constructors
 
+        public ClamdScan(Location location) : this(location, "")
+        {
+        }
+
         public ClamdScan(Location location, string path)
         {
             log.Debug("In ClamdScan()");
+			_execute = "clamdscan.exe";
             _path = path;
             _startDate = new DateTime();
             _startTime = new TimeSpan(_startDate.Hour, _startDate.Minute, _startDate.Second);
@@ -141,7 +36,7 @@ namespace ClamAVLibrary
             string basePath = "";
             switch (location)
             {
-                case Location.App:
+                case Location.app:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -150,14 +45,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Location.Program:
+                case Location.program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case Location.Local:
+                case Location.local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -166,7 +61,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Location.Roaming:
+                case Location.roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -296,59 +191,33 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));
             _settings.Add(new Setting("VirusEvent", null));
+
+            // add commandline parameters
+
+            _options = new List<Option>();
+            _options.Add(new Option("help"));
+            _options.Add(new Option("version"));
+			_options.Add(new Option("debug"));
+            _options.Add(new Option("quiet"));
+            _options.Add(new Option("log"));
+            _options.Add(new Option("file-list"));
+            _options.Add(new Option("remove"));
+            _options.Add(new Option("move"));
+            _options.Add(new Option("copy"));
+            _options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.text));
+            _options.Add(new Option("allmatch"));
+            _options.Add(new Option("multiscan"));
+            _options.Add(new Option("infected"));
+            _options.Add(new Option("no_summary"));
+            _options.Add(new Option("reload"));
+            _options.Add(new Option("fdpass"));
+            _options.Add(new Option("stream"));
+
             log.Debug("Out ClamdScan()");
         }
 
         #endregion
         #region Properties
-
-        public List<Setting> Config
-        {
-            get
-            {
-                return (_settings);
-            }
-            set
-            {
-                _settings = value;
-            }
-        }
-
-        public DateTime Date
-        {
-            get
-            {
-                return (_startDate);
-            }
-            set
-            {
-                _startDate = value;
-            }
-        }
-
-        public int Interval
-        {
-            get
-            {
-                return (_interval);
-            }
-            set
-            {
-                _interval = value;
-            }
-        }
-
-        public UnitType Units
-        {
-            get
-            {
-                return (_units);
-            }
-            set
-            {
-                _units = value;
-            }
-        }
 
         public string Path
         {
@@ -362,476 +231,18 @@ namespace ClamAVLibrary
             }
         }
 
-        public string StartDate
-        {
-            get
-            {
-                return (_startDate.ToString());
-            }
-            set
-            {
-                    _startDate = System.Convert.ToDateTime(value);
-            }
-        }
-
-		public bool IsBackground
-		{
-            get
-            {
-                return (_background);
-            }
-            set
-            {
-                _background = value;
-            }
-        }
-
-        public string StartTime
-        {
-            get
-            {
-                return (_startTime.ToString());
-            }
-            set
-            {
-                DateTime dateTime = System.Convert.ToDateTime(value);
-                _startTime = new TimeSpan(dateTime.Hour, dateTime.Minute, dateTime.Second);
-            }
-        }
-
-        public TimeSpan Time
-        {
-            get
-            {
-                return (_startTime);
-            }
-            set
-            {
-                _startTime = value;
-            }
-        }
-
-        public long Timeout
-        {
-            get
-            {
-                return (_timeout);
-            }
-            set
-            {
-                _timeout = value;
-            }
-        }
-
-
         #endregion
         #region Methods
 
-        public bool Add(string key, object value)
-        {
-            bool add = false;
-            try
-            {
-                _settings.Add(new Setting(key, value));
-                add = true;
-            }
-            catch (Exception e)
-            {
-                log.Error(e.ToString());
-            }
-            return (add);
-        }
-
-        public bool Add(Setting setting)
-        {
-            bool add = false;
-            try
-            {
-                _settings.Add(setting);
-                add = true;
-            }
-            catch (Exception e)
-            {
-                log.Error(e.ToString());
-            }
-            return (add);
-        }
-
-        public bool Remove(Setting setting)
-        {
-            bool remove = false;
-            try
-            {
-                _settings.Remove(setting);
-                remove = true;
-            }
-            catch (Exception e)
-            {
-                log.Error(e.ToString());
-            }
-            return (remove);
-        }
-
-        public bool WriteConfig()
-        {
-            return(WriteConfig(true));
-        }
-		
-        public bool WriteConfig(bool overwrite)
-        {
-            log.Debug("In WriteConfig()");
-            bool written = false;
-
-            StringWriter config = new StringWriter();
-            foreach (Setting setting in _settings)
-            {
-                if (setting.Value == null)
-                {
-                    config.Write("# ");
-                    config.WriteLine(setting.Key);
-                }
-                else
-                {
-                    config.Write(setting.Key + " ");
-                    if (setting.Format != Setting.Type.None)
-                    {
-                        switch (setting.Format)
-                        {
-                            case Setting.Type.Value:
-                                {
-                                    config.WriteLine(setting.Value);
-                                    break;
-                                }
-                            case Setting.Type.Number:
-                                {
-                                    config.WriteLine(setting.Value);
-                                    break;
-                                }
-                            case Setting.Type.String:
-                                {
-                                    config.WriteLine("\"" + setting.Value + "\"");
-                                    break;
-                                }
-                            case Setting.Type.YesNo:
-                                {
-                                    if (Convert.ToBoolean(setting.Value) == true)
-                                    {
-                                        config.WriteLine("yes");
-                                    }
-                                    else
-                                    {
-                                        config.WriteLine("no");
-                                    }
-                                    break;
-                                }
-                        }
-                    }
-                    else
-                    {
-                        if (setting.Value.GetType() == typeof(string))
-                        {
-                            config.WriteLine("\"" + setting.Value + "\"");
-                        }
-                        else if (setting.Value.GetType() == typeof(bool))
-                        {
-                            config.WriteLine(setting.Value);
-                        }
-                        else
-                        {
-                            config.WriteLine(setting.Value);
-                        }
-                    }
-                }
-            }
-
-            if (File.Exists(_configFilenamePath))
-            {
-                try
-                {
-                    File.Delete(_configFilenamePath);
-                }
-                catch (Exception e)
-                {
-                    log.Error(e.ToString());
-                }
-            }
-
-            try
-            {
-                FileStream fs = new FileStream(_configFilenamePath, FileMode.CreateNew, FileAccess.Write);
-                byte[] byteData = null;
-                byteData = Encoding.UTF8.GetBytes(config.ToString());
-                fs.Write(byteData, 0, byteData.Length);
-                fs.Flush();
-                fs.Close();
-                fs.Dispose();
-                written = true;
-            }
-            catch (Exception ex)
-            {
-                log.Error(ex.ToString());
-            }
-            log.Debug("Out WriteConfig()");
-            return (written);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        public bool IsWatching
-        {
-            get { return _thread != null; }
-        }
-
-        /// <summary>
-        /// Start 
-        /// </summary>
-        public void Start()
-        {
-            log.Debug("In Start()");
-
-            if (_disposed)
-                throw new ObjectDisposedException(null, "This instance is already disposed");
-
-            lock (_threadLock)
-            {
-                if (!IsWatching)
-                {
-                    _eventTerminate.Reset();
-                    _thread = new Thread(new ThreadStart(MonitorThread))
-                    {
-                        IsBackground = true
-                    };
-                    _thread.Start();
-                }
-            }
-            log.Debug("Out Start()");
-        }
-
-        /// <summary>
-        /// Stops the watching thread.
-        /// </summary>
-        public void Stop()
-        {
-            log.Debug("In Stop()");
-
-            if (_disposed)
-                throw new ObjectDisposedException(null, "This instance is already disposed");
-
-            signal.Set();   // force out of the waitOne
-            _running = false;
-
-            lock (_threadLock)
-            {
-                Thread thread = _thread;
-                if (thread != null)
-                {
-                    _eventTerminate.Set();
-                    thread.Join();
-                }
-            }
-
-            log.Debug("Out Stop()");
-        }
-
-        /// <summary>
-        /// Disposes this object.
-        /// </summary>
-        public void Dispose()
-        {
-            log.Debug("In Dispose()");
-            Stop();
-            _disposed = true;
-            GC.SuppressFinalize(this);
-            log.Debug("Out Dispose()");
-        }
         #endregion
 
         #region Events
 
-        private void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
-        {
-            if ((outputData != null) && (outputData.Data != null))
-            {
-                if (outputData.Data.Trim() != "")
-                {
-                    log.Info("Output=" + outputData.Data);
-                }
-            }
-        }
-
-        private void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
-        {
-            if ((errorData != null) && (errorData.Data != null))
-            {
-                if (errorData.Data.Trim() != "")
-                {
-                    log.Error("Error=" + errorData.Data);
-                }
-            }
-        }
-
         #endregion
         #region Private
 
-        /// <summary>
-        /// 
-        /// </summary>
-        private void MonitorThread()
-        {
-            log.Debug("In MonitorThread()");
-
-            try
-            {
-                if (_background == true)
-                {
-                    LaunchClamdscan();
-                }
-                else
-                {
-                    ClamdscanLoop();
-                }
-            }
-            catch (Exception e)
-            {
-                log.Fatal(e.ToString());
-            }
-            _thread = null;
-
-            log.Debug("Out MonitorThread()");
-        }
-
-        /// <summary>
-        /// Wait for a specific amount of time before launching clamscan
-        /// </summary>
-        private void ClamdscanLoop()
-        {
-            log.Debug("In ClamdscanLoop()");
-
-            // process clamdscan at the defined intervals
-
-            signal = new AutoResetEvent(false);
-            _running = true;
-
-            DateTime start = DateTime.Now;    // Set the start timer
-
-            DateTime startDateTime = new DateTime(_startDate.Year, _startDate.Month, _startDate.Day, _startTime.Hours, _startTime.Minutes, _startTime.Seconds);
-            int sleepFor = _interval * 1000; // need to convert to milliseconds
-            do
-            {
-                DateTime now = DateTime.Now;
-                TimeSpan span = now.Subtract(startDateTime);
-                long elapsed = (long)span.TotalSeconds;
-
-                // options here to either trigger at startDateTime or startDateTime + timeout
-
-                if (elapsed < 0)
-                {
-                    // Schedule in the future
-                    _timeout = -elapsed;
-                }
-
-                start = startDateTime.AddSeconds(_timeout * (int)(elapsed / _timeout));   // Calculate the new start
-
-                do
-                {
-                    signal.WaitOne(sleepFor);    // Every Interval check
-                    span = DateTime.Now.Subtract(start);
-                }
-                while ((((long)span.TotalSeconds < _timeout) && (_timeout > 0)) || (_timeout == 0));
-
-                if (_downloading == false)
-                {
-                    LaunchClamdscan();
-                    _downloading = false;
-                }
-            }
-            while (_running == true);
-
-            log.Debug("Out ClamdscanLoop()");
-        }
-
-        /// <summary>
-        /// Launch the clamdscan within a process
-        /// </summary>
-        private void LaunchClamdscan()
-        {
-            log.Debug("In LaunchClamdscan()");
-
-            _downloading = true;
-
-            Process proc = new System.Diagnostics.Process();
-
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-
-            startInfo.FileName = "clamdscan.exe";   // Assume that clamAV is installed in the same location
-            startInfo.Arguments = "--config-file " + _configFilenamePath + " " + _filePath;
-            startInfo.CreateNoWindow = false;
-            startInfo.UseShellExecute = false;
-            // Trap Standard output
-            startInfo.RedirectStandardOutput = true;
-            proc.OutputDataReceived += new DataReceivedEventHandler(OutputReceived);
-            // Trap Standard error
-            startInfo.RedirectStandardError = true;
-            proc.ErrorDataReceived += new DataReceivedEventHandler(ErrorReceived);
-            // Enable exit event to be raised
-
-            proc.EnableRaisingEvents = true;
-            proc.StartInfo = startInfo;
-            try
-            {
-                proc.Start();
-                log.Info(startInfo.FileName + " " + startInfo.Arguments);
-                proc.BeginOutputReadLine();
-                proc.BeginErrorReadLine();
-            }
-            catch(Exception e)
-            {
-                log.Error(e.ToString());
-            }
-
-            _downloading = true;
-
-            log.Debug("Out LaunchClamdscan()");
-        }
-
-        long TimeConvert(UnitType schedule, long timeout)
-        {
-            log.Debug("In TimeConvert()");
-            long seconds = timeout;
-
-            // convert to seconds
-
-            switch (schedule)
-            {
-                case UnitType.minute:
-                    {
-                        seconds = timeout * 60;
-                    }
-                    break;
-                case UnitType.hour:
-                    {
-                        seconds = timeout * 3600;
-                    }
-                    break;
-                case UnitType.day:
-                    {
-                        seconds = timeout * 24 * 3600;
-                    }
-                    break;
-                case UnitType.week:
-                    {
-                        seconds = timeout * 7 * 24 * 3600;
-                    }
-                    break;
-            }
-            log.Debug("Out TimeConvert()");
-            return (seconds);
-        }
-
         #endregion
     }
-
     /*
                       Clam AntiVirus: Daemon Client 0.100.2
            By The ClamAV Team: https://www.clamav.net/about.html#credits

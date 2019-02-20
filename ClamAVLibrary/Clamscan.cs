@@ -8,6 +8,9 @@ using log4net;
 
 namespace ClamAVLibrary
 {
+    /// <summary>
+    /// Wrapper class to manage and launch clamscan
+    /// </summary>
     public class ClamScan : Components
     {
         #region Variables
@@ -16,13 +19,22 @@ namespace ClamAVLibrary
         
         #endregion
         #region Constructors
+        public ClamScan(Location location) : this(location, "")
+        {
+        }
         public ClamScan(Location location, string path)
         {
             log.Debug("In ClamScan()");
 
             _execute = "clamscan.exe";
-
-            _path = path;
+			if (path.Length>0)
+			{
+            	_path = path;
+			}
+			else
+			{
+				_path = ".";
+			}
             _startDate = new DateTime();
             _startTime = new TimeSpan(_startDate.Hour, _startDate.Minute, _startDate.Second);
             string basePath = "";

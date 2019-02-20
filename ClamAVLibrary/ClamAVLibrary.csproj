@@ -56,7 +56,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="rfc5424.cs" />
     <Compile Include="rfc3164.cs" />
+    <Compile Include="Schedule.cs" />
     <Compile Include="Serialise.cs" />
+    <Compile Include="ScheduleEventArgs.cs" />
     <Compile Include="SocketEventArgs.cs" />
     <Compile Include="SocketMonitor.cs" />
     <Compile Include="SysLog.cs" />

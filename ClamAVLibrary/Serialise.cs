@@ -13,29 +13,32 @@ namespace ClamAVLibrary
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        string filename = "";
-        string path = "";
+        string _filename = "";
+        string _path = "";
 
         #endregion
         #region Constructor
+
         public Serialise()
         { }
+
         public Serialise(string filename, string path)
         {
-            this.filename = filename;
-            this.path = path;
+            this._filename = filename;
+            this._path = path;
         }
+
         #endregion
         #region Properties
         public string Filename
         {
             get
             {
-                return (filename);
+                return (_filename);
             }
             set
             {
-                filename = value;
+                _filename = value;
             }
         }
 
@@ -43,25 +46,26 @@ namespace ClamAVLibrary
         {
             get
             {
-                return (path);
+                return (_path);
             }
             set
             {
-                path = value;
+                _path = value;
             }
         }
         #endregion
         #region Methods
 
-        public Watcher FromXML()
+        public ClamAV FromXML()
         {
-            return(FromXML(filename, path));
+            return(FromXML(_filename, _path));
         }
 
-        public Watcher FromXML(string filename, string path)
+        public ClamAV FromXML(string filename, string path)
         {
-            Watcher watcher = null;
+            ClamAV clamAV = null;
             Forwarder forwarder = null;
+
             try
             {
                 // Point to the file
@@ -117,12 +121,29 @@ namespace ClamAVLibrary
                                         {
                                             #region ClamAV
                                             case "clamav":
-                                                {
-                                                   
+                                                {                                              
                                                     stack.Push(current);
                                                     current = element;
-                                                    watcher = new Watcher();
+                                                    clamAV = new ClamAV();
                                                     break;                                                   
+                                                }
+                                            #endregion
+                                            #region Scan
+                                            case "scan":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    clamAV = new ClamAV();
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Update
+                                            case "update":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    clamAV = new ClamAV();
+                                                    break;
                                                 }
                                             #endregion
                                             #region Forwarder
@@ -192,7 +213,19 @@ namespace ClamAVLibrary
                                         {
                                             case "forwarder":
                                                 {
-                                                    //watcher.Add(forwarder);
+                                                    //clamAV.Add(forwarder);
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            case "scan":
+                                                {
+                                                    //clamAV.Add(scan);
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            case "update":
+                                                {
+                                                    //clamAV.Update(scan);
                                                     current = stack.Pop();
                                                     break;
                                                 }
@@ -399,7 +432,7 @@ namespace ClamAVLibrary
                 log.Error("Other Error " + e.Message);
             }
 
-            return (watcher);
+            return (clamAV);
         }
         #endregion
         #region Private

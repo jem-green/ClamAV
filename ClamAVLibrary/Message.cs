@@ -58,7 +58,6 @@ namespace ClamAVLibrary
         protected string tag = "";
 
         #endregion
-
         #region Properties
 
         public FacilityType Facility
@@ -143,7 +142,6 @@ namespace ClamAVLibrary
         }
 
         #endregion
-
         #region Methods
 
         /// <summary>

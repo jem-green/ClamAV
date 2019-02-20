@@ -17,6 +17,10 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
+        public FreshClam() : this(Location.program)
+        {
+        }
+
         public FreshClam(Location location)
         {
             log.Debug("In FreshClam()");

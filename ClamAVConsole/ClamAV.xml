@@ -1,16 +1,33 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <clamav>
-  <daemon>yes</daemon>
-  <database></database>
-  <confguration></confguration>
-  <log></log>
+  <confguration>
+    <!--server, client or combined-->
+    <mode>server</mode>
+    <!--Program, App, Local, Roaming-->
+    <database>program</database>
+    <!--Program, App, Local, Roaming-->
+    <log>programe</log>
+    <update>
+        <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+        <starttime format="HH:mm:ss">03:00:00</starttime>
+        <schedule>day</schedule>
+        <timeout>1</timeout>
+    </update>
+  </confguration>
   <scans>
-    <scan id="dive_d">
-      <startdate format="dd-MMM-yyyy">05-dec-2018</startdate>
-      <starttime format="HH:mm:ss">01:00:00</starttime>
-      <schedule>days</schedule>
+    <scan id="dive_c">
+      <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+      <starttime format="HH:mm:ss">00:30:00</starttime>
+      <schedule>day</schedule>
       <timeout>1</timeout>
-      <path>d:\</path>
+      <path>c:\</path>
+    </scan>
+    <scan id="dive_e">
+      <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+      <starttime format="HH:mm:ss">01:00:00</starttime>
+      <schedule>week</schedule>
+      <timeout>1</timeout>
+      <path>e:\</path>
     </scan>
   </scans>
   <forwarders>
