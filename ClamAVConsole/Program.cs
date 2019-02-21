@@ -29,11 +29,15 @@ namespace ClamAVConsole
 
             ClamScan clamScan = new ClamScan(ClamScan.Location.program, @"c:\");
             clamScan.WriteConfig();
-            clamScan.Timeout = 1;    // 1 minute
-            clamScan.Units = ClamScan.TimeoutUnit.day;
-            clamScan.Interval = 60;    // i minute checking interval
-            clamScan.StartDate = "10 February 2018";
-            clamScan.StartTime = "00:05:00";
+
+            Schedule scanSchedule = new Schedule();
+            scanSchedule.Timeout = 1;    // 1 minute
+            scanSchedule.Units = Schedule.TimeoutUnit.day;
+            scanSchedule.Interval = 60;    // i minute checking interval
+            scanSchedule.StartDate = "10 February 2018";
+            scanSchedule.StartTime = "00:05:00";
+
+            clamScan.Schedule = scanSchedule;
             clamScan.Path = @"c:\";
             //clamScan.Update(new ClamScan.Option("infected","", FreshClam.Option.ConfigFormat.key));
             clamScan.Start();
@@ -41,11 +45,15 @@ namespace ClamAVConsole
 
             clamScan = new ClamScan(ClamScan.Location.program, @"e:\");
             clamScan.WriteConfig();
-            clamScan.Timeout = 1;    // 1 minute
-            clamScan.Units = ClamScan.TimeoutUnit.week;
-            clamScan.Interval = 60;    // i minute checking interval
-            clamScan.StartDate = "10 February 2018";
-            clamScan.StartTime = "01:00:00";
+
+            scanSchedule = new Schedule();
+            scanSchedule.Timeout = 1;    // 1 minute
+            scanSchedule.Units = Schedule.TimeoutUnit.week;
+            scanSchedule.Interval = 60;    // i minute checking interval
+            scanSchedule.StartDate = "10 February 2018";
+            scanSchedule.StartTime = "01:00:00";
+
+            clamScan.Schedule = scanSchedule;
             clamScan.Path = @"e:\";
             clamScan.Start();
             scans.Add(clamScan);

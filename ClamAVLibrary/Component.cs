@@ -31,11 +31,7 @@ namespace ClamAVLibrary
         protected string _logFilenamePath = "";
         protected string _configFilenamePath = "";
 
-        protected DateTime _startDate;
-        protected TimeSpan _startTime;
-        protected long _timeout = 1;                  // Every day
-        protected TimeoutUnit _units = TimeoutUnit.day;     // Daily 
-        protected int _interval = 3600;               // checking interval Every hour 60 x 60 seconds
+        protected Schedule _schedule;
         protected bool _background = false;           // Run in the background
 
         public enum Location : int
@@ -46,16 +42,18 @@ namespace ClamAVLibrary
             roaming = 3
         }
 
-        public enum TimeoutUnit : int
-        {
-            second = 0,
-            minute = 1,
-            hour = 2,
-            day = 3,
-            week = 4,
-            month = 5,
-            year = 6
-        }
+        
+
+        //public enum TimeoutUnit : int
+        //{
+        //    second = 0,
+        //    minute = 1,
+        //    hour = 2,
+        //    day = 3,
+        //    week = 4,
+        //    month = 5,
+        //    year = 6
+        //}
 
         public struct Setting
         {
@@ -226,50 +224,15 @@ namespace ClamAVLibrary
             }
         }
 
-        public DateTime Date
+        public Schedule Schedule
         {
             get
             {
-                return (_startDate);
+                return (_schedule);
             }
             set
             {
-                _startDate = value;
-            }
-        }
-
-        public int Interval
-        {
-            get
-            {
-                return (_interval);
-            }
-            set
-            {
-                _interval = value;
-            }
-        }
-
-        public TimeoutUnit Units
-        {
-            get
-            {
-                return (_units);
-            }
-            set
-            {
-                _units = value;
-            }
-        }
-        public string StartDate
-        {
-            get
-            {
-                return (_startDate.ToString());
-            }
-            set
-            {
-                _startDate = System.Convert.ToDateTime(value);
+                _schedule = value;
             }
         }
 
@@ -284,44 +247,6 @@ namespace ClamAVLibrary
                 _background = value;
             }
         }
-
-        public string StartTime
-        {
-            get
-            {
-                return (_startTime.ToString());
-            }
-            set
-            {
-                DateTime dateTime = System.Convert.ToDateTime(value);
-                _startTime = new TimeSpan(dateTime.Hour, dateTime.Minute, dateTime.Second);
-            }
-        }
-
-        public TimeSpan Time
-        {
-            get
-            {
-                return (_startTime);
-            }
-            set
-            {
-                _startTime = value;
-            }
-        }
-
-        public long Timeout
-        {
-            get
-            {
-                return (_timeout);
-            }
-            set
-            {
-                _timeout = value;
-            }
-        }
-
 
         #endregion
         #region Methods
@@ -712,6 +637,16 @@ namespace ClamAVLibrary
                 }
                 else
                 {
+                    try
+                    {
+                        _schedule.ScheduleReceived += new EventHandler<SocketEventArgs>(OnMessageReceived);
+                        socketMonitor.Start();
+                    }
+                    catch (Exception e)
+                    {
+                        log.Debug(e.ToString());
+                    }
+
                     Loop();
                 }
             }
@@ -738,8 +673,8 @@ namespace ClamAVLibrary
 
             DateTime start = DateTime.Now;    // Set the start timer
             long timeout = 0;
-            DateTime startDateTime = new DateTime(_startDate.Year, _startDate.Month, _startDate.Day, _startTime.Hours, _startTime.Minutes, _startTime.Seconds);
-            int sleepFor = _interval * 1000; // need to convert to milliseconds
+            DateTime startDateTime = new DateTime(_schedule.Date.Year, _schedule.Date.Month, _schedule.Date.Day, _schedule.Time.Hours, _schedule.Time.Minutes, _schedule.Time.Seconds);
+            int sleepFor = _schedule.Interval * 1000; // need to convert to milliseconds
             do
             {
                 DateTime now = DateTime.Now;
@@ -755,7 +690,7 @@ namespace ClamAVLibrary
                 }
                 else
                 {
-                    timeout = TimeConvert(_units, _timeout);
+                    timeout = TimeConvert(_schedule.Units, _schedule.Timeout);
                 }
 
                 start = startDateTime.AddSeconds(timeout * (int)(elapsed / timeout));   // Calculate the new start
@@ -819,7 +754,13 @@ namespace ClamAVLibrary
             log.Debug("Out Launch()");
         }
 
-        long TimeConvert(TimeoutUnit schedule, long timeout)
+        // Define the event handlers.
+        private void OnMessageReceived(object source, ScheduleEventArgs e)
+        {
+            Launch();
+        }
+
+        long TimeConvert(Schedule.TimeoutUnit schedule, long timeout)
         {
             log.Debug("In TimeConvert()");
             long seconds = timeout;
@@ -828,22 +769,22 @@ namespace ClamAVLibrary
 
             switch (schedule)
             {
-                case TimeoutUnit.minute:
+                case Schedule.TimeoutUnit.minute:
                     {
                         seconds = timeout * 60;
                     }
                     break;
-                case TimeoutUnit.hour:
+                case Schedule.TimeoutUnit.hour:
                     {
                         seconds = timeout * 3600;
                     }
                     break;
-                case TimeoutUnit.day:
+                case Schedule.TimeoutUnit.day:
                     {
                         seconds = timeout * 24 * 3600;
                     }
                     break;
-                case TimeoutUnit.week:
+                case Schedule.TimeoutUnit.week:
                     {
                         seconds = timeout * 7 * 24 * 3600;
                     }
