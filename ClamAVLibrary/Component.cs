@@ -639,8 +639,8 @@ namespace ClamAVLibrary
                 {
                     try
                     {
-                        _schedule.ScheduleReceived += new EventHandler<SocketEventArgs>(OnMessageReceived);
-                        socketMonitor.Start();
+                        _schedule.ScheduleReceived += new EventHandler<ScheduleEventArgs>(OnMessageReceived);
+                        _schedule.Start();
                     }
                     catch (Exception e)
                     {

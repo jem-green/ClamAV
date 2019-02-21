@@ -30,8 +30,8 @@ namespace ClamAVLibrary
             log.Debug("In ClamdScan()");
 			_execute = "clamdscan.exe";
             _path = path;
-            _startDate = new DateTime();
-            _startTime = new TimeSpan(_startDate.Hour, _startDate.Minute, _startDate.Second);
+            _schedule.Date = new DateTime();
+            _schedule.Time = new TimeSpan(_schedule.Date.Hour, _schedule.Date.Minute, _schedule.Date.Second);
 
             string basePath = "";
             switch (location)
