@@ -19,10 +19,10 @@ namespace ClamAVLibrary
         
         #endregion
         #region Constructors
-        public ClamScan(Location location) : this(location, "")
+        public ClamScan(ClamAV.DataLocation location) : this(location, "")
         {
         }
-        public ClamScan(Location location, string path)
+        public ClamScan(ClamAV.DataLocation location, string path)
         {
             log.Debug("In ClamScan()");
 
@@ -35,13 +35,14 @@ namespace ClamAVLibrary
 			{
 				_path = ".";
 			}
-            _schedule.Date = new DateTime();
-            _schedule.Time = new TimeSpan(_schedule.Date.Hour, _schedule.Date.Minute, _schedule.Date.Second);
-            string basePath = "";
+
+            _schedule = new Schedule();
+            _schedule.Date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
+            _schedule.Time = new TimeSpan(_schedule.Date.Hour, _schedule.Date.Minute, _schedule.Date.Second); string basePath = "";
 
             switch (location)
             {
-                case Location.app:
+                case ClamAV.DataLocation.app:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -50,14 +51,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Location.program:
+                case ClamAV.DataLocation.program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case Location.local:
+                case ClamAV.DataLocation.local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -66,7 +67,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Location.roaming:
+                case ClamAV.DataLocation.roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))

@@ -128,7 +128,6 @@ namespace ClamAVLibrary
         }
 
         #endregion
-
         #region Constructors
 
         public Rfc5424()
@@ -168,7 +167,6 @@ namespace ClamAVLibrary
         }
 
         #endregion
-
         #region Properties
 
         public override string Payload

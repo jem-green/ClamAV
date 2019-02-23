@@ -6,11 +6,11 @@
     <!--Program, App, Local, Roaming-->
     <database>program</database>
     <!--Program, App, Local, Roaming-->
-    <log>programe</log>
+    <log>program</log>
     <update>
         <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
         <starttime format="HH:mm:ss">03:00:00</starttime>
-        <schedule>day</schedule>
+        <schedule>minute</schedule>
         <timeout>1</timeout>
     </update>
   </confguration>

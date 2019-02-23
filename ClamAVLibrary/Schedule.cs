@@ -25,7 +25,6 @@ namespace ClamAVLibrary
 
         #endregion
 
-
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /*
@@ -37,13 +36,14 @@ namespace ClamAVLibrary
 
         #region Variables
 
-        private DateTime _startDate = DateTime.Now;       //
-        private TimeSpan _startTime = new TimeSpan();     //
-        private long _timeout = 1;                        // Every day
-        private TimeoutUnit _units = TimeoutUnit.day;     // Daily
-        private int _checkInterval = 60;                  // Every minute 
-        private string _dateFormat = "";
-        private string _timeFormat = "";
+        private string _Id = "";                            //
+        private DateTime _startDate;                        //
+        private TimeSpan _startTime;                        //
+        private long _timeout = 1;                          // Every day
+        private TimeoutUnit _units = TimeoutUnit.day;       // Daily
+        private int _checkInterval = 60;                    // Every minute 
+        private string _dateFormat = "";                    //
+        private string _timeFormat = "";                    //
 
         public enum TimeoutUnit : int
         {
@@ -64,7 +64,17 @@ namespace ClamAVLibrary
         protected bool _running = false;
 
         #endregion
+        #region Constructors
 
+        public Schedule()
+        {
+            log.Debug("In Schedule()");
+            _startDate = new DateTime();       //
+            _startTime = new TimeSpan();       //
+            log.Debug("Out Schedule()");
+        }
+
+        #endregion
         #region Properties
 
         public DateTime Date
@@ -76,42 +86,6 @@ namespace ClamAVLibrary
             set
             {
                 _startDate = value;
-            }
-        }
-
-        public long Timeout
-        {
-            get
-            {
-                return (_timeout);
-            }
-            set
-            {
-                _timeout = value;
-            }
-        }
-
-        public TimeoutUnit Units
-        {
-            get
-            {
-                return (_units);
-            }
-            set
-            {
-                _units = value;
-            }
-        }
-
-        public int Interval
-        {
-            get
-            {
-                return (_checkInterval);
-            }
-            set
-            {
-                _checkInterval = value;
             }
         }
 
@@ -127,15 +101,27 @@ namespace ClamAVLibrary
             }
         }
 
-        public string TimeFormat
+        public string Id
         {
             get
             {
-                return (_dateFormat);
+                return (_Id);
             }
             set
             {
-                _dateFormat = value;
+                _Id = value;
+            }
+        }
+
+        public int Interval
+        {
+            get
+            {
+                return (_checkInterval);
+            }
+            set
+            {
+                _checkInterval = value;
             }
         }
 
@@ -147,7 +133,7 @@ namespace ClamAVLibrary
             }
             set
             {
-                if (_dateFormat.Length >0)
+                if (_dateFormat.Length > 0)
                 {
                     CultureInfo provider = CultureInfo.InvariantCulture;
                     if (!DateTime.TryParseExact(value, _dateFormat, provider, System.Globalization.DateTimeStyles.AllowWhiteSpaces, out _startDate))
@@ -206,8 +192,55 @@ namespace ClamAVLibrary
             }
         }
 
-        #endregion
+        public string TimeFormat
+        {
+            get
+            {
+                return (_dateFormat);
+            }
+            set
+            {
+                _dateFormat = value;
+            }
+        }
 
+        public long Timeout
+        {
+            get
+            {
+                return (_timeout);
+            }
+            set
+            {
+                _timeout = value;
+            }
+        }
+
+        public string TimeoutUnits
+        {
+            get
+            {
+                return (_units.ToString());
+            }
+            set
+            {
+                _units = UnitLookup( value);
+            }
+        }
+
+        public TimeoutUnit Units
+        {
+            get
+            {
+                return (_units);
+            }
+            set
+            {
+                _units = value;
+            }
+        }
+
+        #endregion
         #region Methods
 
         /// <summary>
@@ -277,6 +310,68 @@ namespace ClamAVLibrary
         {
         }
 
+        public static TimeoutUnit UnitLookup(string unitName)
+        {
+            TimeoutUnit timeoutUnit = TimeoutUnit.day;
+
+            if (Int32.TryParse(unitName, out int unitValue))
+            {
+                timeoutUnit = (TimeoutUnit)unitValue;
+            }
+            else
+            {
+                string lookup = unitName;
+                if (unitName.Length > 1)
+                {
+                    lookup = unitName.ToUpper();
+                }
+
+                switch (lookup)
+                {
+                    case "M":
+                    case "MINUTE":
+                        {
+                            timeoutUnit = TimeoutUnit.minute;
+                            break;
+                        }
+                    case "H":
+                    case "HOUR":
+                        {
+                            timeoutUnit = TimeoutUnit.hour;
+                            break;
+                        }
+                    case "D":
+                    case "DAY":
+                        {
+                            timeoutUnit = TimeoutUnit.day;
+                            break;
+                        }
+                    case "W":
+                    case "WEEK":
+                        {
+                            timeoutUnit = TimeoutUnit.week;
+                            break;
+                        }
+                    case "m":
+                    case "MONTH":
+                        {
+                            timeoutUnit = TimeoutUnit.month;
+                            break;
+                        }
+                    case "Y":
+                    case "YEAR":
+                        {
+                            timeoutUnit = TimeoutUnit.year;
+                            break;
+                        }
+                }
+            }
+            return (timeoutUnit);          
+        }
+
+        #endregion
+        #region Private
+
         /// <summary>
         /// 
         /// </summary>
@@ -321,6 +416,12 @@ namespace ClamAVLibrary
                 while ((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0));
 
                 // need to raise the event
+
+                log.Info("Timeout");
+
+                ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now,"Timeout");
+                OnSocketReceived(args);
+
             }
             while (_running == true);
 

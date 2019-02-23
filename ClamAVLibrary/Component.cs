@@ -32,28 +32,7 @@ namespace ClamAVLibrary
         protected string _configFilenamePath = "";
 
         protected Schedule _schedule;
-        protected bool _background = false;           // Run in the background
-
-        public enum Location : int
-        {
-            program = 0,
-            app = 1,
-            local = 2,
-            roaming = 3
-        }
-
-        
-
-        //public enum TimeoutUnit : int
-        //{
-        //    second = 0,
-        //    minute = 1,
-        //    hour = 2,
-        //    day = 3,
-        //    week = 4,
-        //    month = 5,
-        //    year = 6
-        //}
+        protected bool _background = false;           // Run in the foreground
 
         public struct Setting
         {
@@ -253,6 +232,7 @@ namespace ClamAVLibrary
 
         public bool Update(object configuration)
         {
+            log.Debug("In Update()");
             bool update = false;
             try
             {
@@ -264,6 +244,7 @@ namespace ClamAVLibrary
                         if (_settings[i].Key == setting.Key)
                         {
                             _settings[i] = setting;
+                            log.Info("Update setting:" + setting.Key + "=" + setting);
                         }
 
                     }
@@ -276,6 +257,7 @@ namespace ClamAVLibrary
                         if (_options[i].Key == option.Key)
                         {
                             _options[i] = option;
+                            log.Info("Update option:" + option.Key + "=" + option);
                         }
                     }
                 }
@@ -285,22 +267,28 @@ namespace ClamAVLibrary
             {
                 log.Error(e.ToString());
             }
+            log.Debug("Out Update()");
             return (update);
         }
 
         public bool Add(object configuration)
         {
+            log.Debug("In Add()");
             bool add = false;
             try
             {
                 if (configuration.GetType() == typeof(Setting))
                 {
-                    _settings.Add((Setting)configuration);
+                    Setting setting = (Setting)configuration;
+                    _settings.Add(setting);
+                    log.Info("Update setting:" + setting.Key + "=" + setting);
                     add = true;
                 }
                 else
                 {
-                    _options.Add((Option)configuration);
+                    Option option = (Option)configuration;
+                    _options.Add(option);
+                    log.Info("Update setting:" + option.Key + "=" + option);
                     add = true;
                 }
             }
@@ -308,11 +296,13 @@ namespace ClamAVLibrary
             {
                 log.Error(e.ToString());
             }
+            log.Debug("Out Add()");
             return (add);
         }
 
         public bool Remove(object configuration)
         {
+            log.Debug("In Remove()");
             bool remove = false;
             try
             {
@@ -331,6 +321,7 @@ namespace ClamAVLibrary
             {
                 log.Error(e.ToString());
             }
+            log.Debug("Out Remove()");
             return (remove);
         }
 
@@ -699,6 +690,7 @@ namespace ClamAVLibrary
                 {
                     signal.WaitOne(sleepFor);    // Every Interval check
                     span = DateTime.Now.Subtract(start);
+                    log.Debug("Checking");
                 }
                 while ((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0));
 

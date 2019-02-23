@@ -64,6 +64,7 @@ namespace ClamAVLibrary
         public ClamAV FromXML(string filename, string path)
         {
             ClamAV clamAV = null;
+            Schedule schedule = null;
             Forwarder forwarder = null;
 
             try
@@ -125,24 +126,6 @@ namespace ClamAVLibrary
                                                     stack.Push(current);
                                                     current = element;
                                                     clamAV = new ClamAV();
-                                                    break;                                                   
-                                                }
-                                            #endregion
-                                            #region Scan
-                                            case "scan":
-                                                {
-                                                    stack.Push(current);
-                                                    current = element;
-                                                    clamAV = new ClamAV();
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Update
-                                            case "update":
-                                                {
-                                                    stack.Push(current);
-                                                    current = element;
-                                                    clamAV = new ClamAV();
                                                     break;
                                                 }
                                             #endregion
@@ -152,7 +135,7 @@ namespace ClamAVLibrary
                                                     stack.Push(current);
                                                     current = element;
                                                     forwarder = new Forwarder();
-                                                    
+
                                                     if (xmlReader.HasAttributes == true)
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
@@ -199,6 +182,96 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
+                                            #region Scan
+                                            case "scan":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    schedule = new Schedule();
+
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        schedule.Id = xmlReader.Value.ToLower();
+                                                                    }
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region StartDate
+                                            case "startdate":
+                                                {
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "format":
+                                                                    {
+                                                                        schedule.DateFormat = xmlReader.Value.ToLower();
+                                                                    }
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region StartTime
+                                            case "starttime":
+                                                {
+
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "format":
+                                                                    {
+                                                                        schedule.TimeFormat = xmlReader.Value.ToLower();
+                                                                    }
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Update
+                                            case "update":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    schedule = new Schedule();
+
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        schedule.Id = xmlReader.Value.ToLower();
+                                                                    }
+                                                                    break;
+                                                            }
+                                                        }
+                                                    }
+                                                    break;
+                                                }
+                                            #endregion
                                         }
                                         break;
                                     }
@@ -213,19 +286,19 @@ namespace ClamAVLibrary
                                         {
                                             case "forwarder":
                                                 {
-                                                    //clamAV.Add(forwarder);
+                                                    clamAV.Add(forwarder);
                                                     current = stack.Pop();
                                                     break;
                                                 }
                                             case "scan":
                                                 {
-                                                    //clamAV.Add(scan);
+                                                    clamAV.Scans.Add(schedule);
                                                     current = stack.Pop();
                                                     break;
                                                 }
                                             case "update":
                                                 {
-                                                    //clamAV.Update(scan);
+                                                    clamAV.Update = schedule;
                                                     current = stack.Pop();
                                                     break;
                                                 }
@@ -245,11 +318,53 @@ namespace ClamAVLibrary
 
                                         switch (element)
                                         {
-                                            case "check":
+                                            case "database":
+                                                {
+                                                    clamAV.Database = ClamAV.LocationLookup(text);
+                                                    break;
+                                                }
+                                            case "log":
+                                                {
+                                                    clamAV.Log = ClamAV.LocationLookup(text);
+                                                    break;
+                                                }
+                                            case "mode":
+                                                {
+                                                    clamAV.Mode = ClamAV.OperatingLookup(text);
+                                                    break;
+                                                }
+                                            case "startdate":
                                                 {
                                                     try
                                                     {
-                                                        //watcher.Check = Convert.ToInt32(text) * 1000; // convert to milliseconds
+                                                        schedule.StartDate = text;
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
+                                            case "starttime":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.StartTime = text;
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
+                                            case "schedule":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.TimeoutUnits = text;
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
+                                            case "timeout":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.Timeout = Convert.ToInt32(text);
                                                     }
                                                     catch { };
                                                     break;
@@ -272,11 +387,6 @@ namespace ClamAVLibrary
                                             case "host":
                                                 {
                                                     forwarder.Host = text;
-                                                    break;
-                                                }
-                                            case "interface":
-                                                {
-                                                    //watcher.Interface = text;
                                                     break;
                                                 }
                                             case "key":
@@ -308,30 +418,13 @@ namespace ClamAVLibrary
                                                         }
                                                         catch { }
                                                     }
-                                                    else if (current == "cardiac")
-                                                    {
-                                                        try
-                                                        {
-                                                            //watcher.Port = Convert.ToInt32(text);
-                                                        }
-                                                        catch { }
-                                                    }
-                                                    break;
-                                                }
-                                            case "timeout":
-                                                {
-                                                    try
-                                                    {
-                                                        //watcher.Timeout = Convert.ToInt32(text) * 1000; // convert to milliseconds
-                                                    }
-                                                    catch{};
                                                     break;
                                                 }
                                             case "protocol":
                                                 {
                                                     if (text.Trim().ToLower() == "rfc5424")
                                                     {
-                                                        //watcher.Protocol = Watcher.ProtocolFormat.rfc5424;
+                                                        //clamAV.Protocol = Watcher.ProtocolFormat.rfc5424;
                                                     }
                                                     break;
                                                 }

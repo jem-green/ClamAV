@@ -3,12 +3,15 @@ using System.Collections.Generic;
 using System.Text;
 using System.Net;
 using System.Net.Sockets;
+using log4net;
 
 namespace ClamAVLibrary
 {
     public class Forwarder
     {
         #region Variables
+
+        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private string id = "";
         ForwaderType type = ForwaderType.Growl;
@@ -39,6 +42,8 @@ namespace ClamAVLibrary
         #region Constructor
         public Forwarder()
         {
+            log.Debug("In Forwarder()");
+            log.Debug("Out Forwarder()");
         }
 
         #endregion

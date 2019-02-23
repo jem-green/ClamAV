@@ -68,7 +68,9 @@
   <ItemGroup>
     <Content Include="clamav.ico" />
     <None Include="clamav.png" />
-    <Content Include="ClamAV.xml" />
+    <Content Include="ClamAV.xml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <None Include="Resources\ClamAV.png" />
     <None Include="Resources\ClamAV.bmp" />
   </ItemGroup>

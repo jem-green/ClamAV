@@ -21,11 +21,11 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public Clamd(Location location) : this(location, 0)
+        public Clamd(ClamAV.DataLocation location) : this(location, 0)
         {
         }
 
-        public Clamd(Location location, int port)
+        public Clamd(ClamAV.DataLocation location, int port)
         {
 			log.Debug("In Clamd()");
 			_execute = "clamd.exe";
@@ -37,7 +37,7 @@ namespace ClamAVLibrary
 
             switch (location)
             {
-                case Location.app:
+                case ClamAV.DataLocation.app:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -46,14 +46,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Location.program:
+                case ClamAV.DataLocation.program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case Location.local:
+                case ClamAV.DataLocation.local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -62,9 +62,9 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Location.roaming:
+                case ClamAV.DataLocation.roaming:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);

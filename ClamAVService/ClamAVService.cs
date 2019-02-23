@@ -110,51 +110,51 @@ namespace ClamAVService
 
             // schedule the update
 
-            FreshClam freshClam = new FreshClam(FreshClam.Location.program);
-            freshClam.WriteConfig();
-            Schedule scanSchedule = new Schedule();
-            scanSchedule.Timeout = 1;    // 1 minute
-            scanSchedule.Units = Schedule.TimeoutUnit.week;
-            scanSchedule.Interval = 60;    // i minute checking interval
-            scanSchedule.StartDate = "10 February 2018";
-            scanSchedule.StartTime = "00:00:00";
-            freshClam.Schedule = scanSchedule;
-            freshClam.Update(new FreshClam.Option("show-progress", "no", FreshClam.Option.ConfigFormat.text));
-            freshClam.Start();
+            //FreshClam freshClam = new FreshClam(FreshClam.Location.program);
+            //freshClam.WriteConfig();
+            //Schedule scanSchedule = new Schedule();
+            //scanSchedule.Timeout = 1;    // 1 minute
+            //scanSchedule.Units = Schedule.TimeoutUnit.week;
+            //scanSchedule.Interval = 60;    // i minute checking interval
+            //scanSchedule.StartDate = "10 February 2018";
+            //scanSchedule.StartTime = "00:00:00";
+            //freshClam.Schedule = scanSchedule;
+            //freshClam.Update(new FreshClam.Option("show-progress", "no", FreshClam.Option.ConfigFormat.text));
+            //freshClam.Start();
 
-            // Add scheduled scans
+            //// Add scheduled scans
 
-            List<ClamScan> scans = new List<ClamScan>();
+            //List<ClamScan> scans = new List<ClamScan>();
 
-            // Scan drive c:
+            //// Scan drive c:
 
-            ClamScan clamScan = new ClamScan(ClamScan.Location.program, @"c:\");
-            clamScan.WriteConfig();
-            scanSchedule = new Schedule();
-            scanSchedule.Timeout = 1;    // 1 minute
-            scanSchedule.Units = Schedule.TimeoutUnit.day;
-            scanSchedule.Interval = 60;    // i minute checking interval
-            scanSchedule.StartDate = "10 February 2018";
-            scanSchedule.StartTime = "00:05:00";
-            clamScan.Schedule = scanSchedule;
-            clamScan.Path = @"c:\";
-            clamScan.Start();
-            scans.Add(clamScan);
+            //ClamScan clamScan = new ClamScan(ClamScan.Location.program, @"c:\");
+            //clamScan.WriteConfig();
+            //scanSchedule = new Schedule();
+            //scanSchedule.Timeout = 1;    // 1 minute
+            //scanSchedule.Units = Schedule.TimeoutUnit.day;
+            //scanSchedule.Interval = 60;    // i minute checking interval
+            //scanSchedule.StartDate = "10 February 2018";
+            //scanSchedule.StartTime = "00:05:00";
+            //clamScan.Schedule = scanSchedule;
+            //clamScan.Path = @"c:\";
+            //clamScan.Start();
+            //scans.Add(clamScan);
 
-            // Scan drive e:
+            //// Scan drive e:
 
-            clamScan = new ClamScan(ClamScan.Location.program, @"e:\");
-            clamScan.WriteConfig();
-            scanSchedule = new Schedule();
-            scanSchedule.Timeout = 1;    // 1 minute
-            scanSchedule.Units = Schedule.TimeoutUnit.week;
-            scanSchedule.Interval = 60;    // i minute checking interval
-            scanSchedule.StartDate = "10 February 2018";
-            scanSchedule.StartTime = "01:00:00";
-            clamScan.Schedule = scanSchedule;
-            clamScan.Path = @"e:\";
-            clamScan.Start();
-            scans.Add(clamScan);
+            //clamScan = new ClamScan(ClamScan.Location.program, @"e:\");
+            //clamScan.WriteConfig();
+            //scanSchedule = new Schedule();
+            //scanSchedule.Timeout = 1;    // 1 minute
+            //scanSchedule.Units = Schedule.TimeoutUnit.week;
+            //scanSchedule.Interval = 60;    // i minute checking interval
+            //scanSchedule.StartDate = "10 February 2018";
+            //scanSchedule.StartTime = "01:00:00";
+            //clamScan.Schedule = scanSchedule;
+            //clamScan.Path = @"e:\";
+            //clamScan.Start();
+            //scans.Add(clamScan);
 
             log.Debug("Out ServiceWorkerMethod");        
 
