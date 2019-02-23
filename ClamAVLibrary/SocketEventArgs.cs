@@ -5,27 +5,28 @@ using System.Net;
 
 namespace ClamAVLibrary
 {
-    public class ScheduleEventArgs : EventArgs
+    public class NotificationEventArgs : EventArgs
     {
         #region Variables
-        DateTime _timeout;
+        private Notification _notification;
         #endregion
         #region Constructor
-        public ScheduleEventArgs(DateTime timeout)
+        public NotificationEventArgs(Notification notification)
         {
-            this._timeout = timeout;
+            this._notification = notification;
         }
         #endregion
         #region Properties
-        public DateTime Timeout
+
+        public Notification Notification
         {
             set
             {
-                _timeout = value;
+                _notification = value;
             }
             get
             {
-                return (_timeout);
+                return (_notification);
             }
         }
         #endregion

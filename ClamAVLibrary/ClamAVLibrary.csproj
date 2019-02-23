@@ -59,6 +59,7 @@
     <Compile Include="Schedule.cs" />
     <Compile Include="Serialise.cs" />
     <Compile Include="ScheduleEventArgs.cs" />
+    <Compile Include="SocketEventArgs.cs" />
     <Compile Include="SysLog.cs" />
     <Compile Include="System\Diagnostics\Tracing.cs" />
   </ItemGroup>

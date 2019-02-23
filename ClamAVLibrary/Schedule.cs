@@ -419,7 +419,7 @@ namespace ClamAVLibrary
 
                 log.Info("Timeout");
 
-                ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now,"Timeout");
+                ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now);
                 OnSocketReceived(args);
 
             }

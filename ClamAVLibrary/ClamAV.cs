@@ -12,7 +12,7 @@ namespace ClamAVLibrary
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         AutoResetEvent monitorSignal;
-        Queue _messageQueue;
+        Queue<Notification> _messageQueue;
         private object _threadLock = new object();
         private Thread _monitoringThread;
 
@@ -55,7 +55,7 @@ namespace ClamAVLibrary
             log.Debug("in ClamAV()");
         	_update = new Schedule();
         	_scans = new List<Schedule>();
-			_messageQueue = new Queue();
+			_messageQueue = new Queue<Notification>();
             _forwarders = new Dictionary<string, Forwarder>();
             log.Debug("Out ClamAV()");
         }	
@@ -161,6 +161,7 @@ namespace ClamAVLibrary
             {
                 Clamd server = new Clamd(_databaseLocation);
                 server.IsBackground = true;
+                server.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                 server.Start();
             }
 
@@ -168,6 +169,7 @@ namespace ClamAVLibrary
             {
                 FreshClam freshClam = new FreshClam(_databaseLocation);
                 freshClam.Schedule = _update;
+                freshClam.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                 freshClam.Start();
                 freshClam.Schedule.Start();
             }
@@ -178,6 +180,7 @@ namespace ClamAVLibrary
                 {
                     ClamScan clamScan = new ClamScan(_databaseLocation);
                     clamScan.Schedule = scan;
+                    clamScan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     clamScan.Start();
                     clamScan.Schedule.Start();
                 }
@@ -189,6 +192,7 @@ namespace ClamAVLibrary
                 {
                     ClamdScan clamdScan = new ClamdScan(_databaseLocation);
                     clamdScan.Schedule = scan;
+                    clamdScan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     clamdScan.Start();
                     clamdScan.Schedule.Start();
                 }
@@ -409,7 +413,7 @@ namespace ClamAVLibrary
                 log.Debug("Processing queue");
                 while (_messageQueue.Count > 0)
                 {
-                    Event clamEvent = (Event)_messageQueue.Peek();
+                    Notification clamEvent = _messageQueue.Peek();
 
                     foreach (KeyValuePair<string, Forwarder> entry in _forwarders)
                     {
@@ -442,12 +446,15 @@ namespace ClamAVLibrary
         }
 
         // Define the event handlers.
-        private void OnMessageReceived(object source, ScheduleEventArgs e)
+        private void OnMessageReceived(object source, NotificationEventArgs e)
         {
-            if (e.Message.Length > 0)
+            if (e.Notification != null)
             {
-                _messageQueue.Enqueue(e);
-                monitorSignal.Set();
+                if (e.Notification.Name.Length > 0)
+                {
+                    _messageQueue.Enqueue(e.Notification);
+                    monitorSignal.Set();
+                }
             }
         }
         #endregion

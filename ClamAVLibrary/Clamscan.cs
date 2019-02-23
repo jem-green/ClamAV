@@ -317,13 +317,38 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
 
         #endregion
         #region Methods
- 
+
         #endregion
 
         #region Events
 
         #endregion
         #region Private
+
+        public override void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
+        {
+            if ((outputData != null) && (outputData.Data != null))
+            {
+                if (outputData.Data.Trim() != "")
+                {
+                    base.OutputReceived(sendingProcess, outputData);
+                }
+            }
+        }
+
+        public override void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
+        {
+            if ((errorData != null) && (errorData.Data != null))
+            {
+                if (errorData.Data.Trim() != "")
+                {
+                    Notification notification = new Notification("genesis", "clamscan", errorData.Data, Notification.EventLevel.Error);
+                    base.OutputReceived(sendingProcess, errorData);
+                    NotificationEventArgs args = new NotificationEventArgs(notification);
+                    OnSocketReceived(args);
+                }
+            }
+        }
 
         #endregion
     }

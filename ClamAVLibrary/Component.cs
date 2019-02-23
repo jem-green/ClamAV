@@ -10,6 +10,26 @@ namespace ClamAVLibrary
 {
     public class Components
     {
+        #region Event handling
+
+        /// <summary>
+        /// Occurs when the socket receives a message.
+        /// </summary>
+        public event EventHandler<NotificationEventArgs> SocketReceived;
+
+        /// <summary>
+        /// Handles the actual event
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnSocketReceived(NotificationEventArgs e)
+        {
+            EventHandler<NotificationEventArgs> handler = SocketReceived;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        #endregion
+
         #region Variables
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
@@ -203,18 +223,6 @@ namespace ClamAVLibrary
             }
         }
 
-        public Schedule Schedule
-        {
-            get
-            {
-                return (_schedule);
-            }
-            set
-            {
-                _schedule = value;
-            }
-        }
-
         public bool IsBackground
         {
             get
@@ -224,6 +232,18 @@ namespace ClamAVLibrary
             set
             {
                 _background = value;
+            }
+        }
+
+        public Schedule Schedule
+        {
+            get
+            {
+                return (_schedule);
+            }
+            set
+            {
+                _schedule = value;
             }
         }
 
@@ -588,7 +608,7 @@ namespace ClamAVLibrary
 
         #region Events
 
-        private void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
+        public virtual void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
         {
             if ((outputData != null) && (outputData.Data != null))
             {
@@ -599,7 +619,7 @@ namespace ClamAVLibrary
             }
         }
 
-        private void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
+        public virtual void ErrorReceived(object sendingProcess, DataReceivedEventArgs errorData)
         {
             if ((errorData != null) && (errorData.Data != null))
             {
@@ -630,7 +650,7 @@ namespace ClamAVLibrary
                 {
                     try
                     {
-                        _schedule.ScheduleReceived += new EventHandler<ScheduleEventArgs>(OnMessageReceived);
+                        _schedule.ScheduleReceived += new EventHandler<ScheduleEventArgs>(OnTimeoutReceived);
                         _schedule.Start();
                     }
                     catch (Exception e)
@@ -747,7 +767,7 @@ namespace ClamAVLibrary
         }
 
         // Define the event handlers.
-        private void OnMessageReceived(object source, ScheduleEventArgs e)
+        private void OnTimeoutReceived(object source, ScheduleEventArgs e)
         {
             Launch();
         }
