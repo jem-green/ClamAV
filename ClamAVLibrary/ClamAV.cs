@@ -21,30 +21,15 @@ namespace ClamAVLibrary
         bool monitorRunning = true;	
         private int monitorInterval = 60000;
 		
-        private OperatingMode _mode = OperatingMode.combined;
-        private DataLocation _logLocation = DataLocation.app;
-        private DataLocation _databaseLocation = DataLocation.app;
-        private DataLocation _serverLocation = DataLocation.app;
+        private Component.DataLocation _location = Component.DataLocation.app;
 
-        private Schedule _update;
-        private List<Schedule> _scans;
+        private Clamd _server;
+        private FreshClam _update;
+        private List<Component> _scans;
         Dictionary<string, Forwarder> _forwarders = null;
+        Component.OperatingMode _mode = Component.OperatingMode.combined;
 
-        public enum DataLocation : int
-        {
-            program = 0,
-            app = 1,
-            local = 2,
-            roaming = 3
-        }
 
-        public enum OperatingMode : int
-        {
-            none = -1,
-            client = 1,
-            server = 2,
-            combined = 3
-        }
 
         #endregion
 
@@ -53,8 +38,8 @@ namespace ClamAVLibrary
 		public ClamAV()
         {
             log.Debug("in ClamAV()");
-        	_update = new Schedule();
-        	_scans = new List<Schedule>();
+        	_update = new FreshClam();
+        	_scans = new List<Component>();
 			_messageQueue = new Queue<Notification>();
             _forwarders = new Dictionary<string, Forwarder>();
             log.Debug("Out ClamAV()");
@@ -64,7 +49,19 @@ namespace ClamAVLibrary
 
         #region Properties
 
-        public OperatingMode Mode
+        public Component.DataLocation Location
+        {
+            get
+            {
+                return (_location);
+            }
+            set
+            {
+                _location = value;
+            }
+        }
+
+        public Component.OperatingMode Mode
         {
             get
             {
@@ -76,31 +73,31 @@ namespace ClamAVLibrary
             }
         }
 
-        public DataLocation Log
+        public Clamd Server
         {
             get
             {
-                return (_logLocation);
+                return (_server);
             }
             set
             {
-                _logLocation = value;
+                _server = value;
             }
         }
 
-        public DataLocation Database
+        public List<Component> Scans
         {
             get
             {
-                return (_databaseLocation);
+                return (_scans);
             }
             set
             {
-                _databaseLocation = value;
+                _scans = value;
             }
         }
 
-        public Schedule Update
+        public FreshClam Update
         {
             get
             {
@@ -112,18 +109,6 @@ namespace ClamAVLibrary
             }
         }
 
-        public List<Schedule> Scans
-        {
-            get
-            {
-                return (_scans);
-            }
-            set
-            {
-                _scans = value;
-            }
-        }
-		
         #endregion
         #region Methods
 
@@ -157,44 +142,38 @@ namespace ClamAVLibrary
             // Combined = freshclam + clamscan
             // Client = clamdscan
 
-            if (_mode == OperatingMode.server)
-            {
-                Clamd server = new Clamd(_databaseLocation);
-                server.IsBackground = true;
-                server.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
-                server.Start();
-            }
+            // Run clamd
 
-            if ((_mode == OperatingMode.combined) || (_mode == OperatingMode.server))
+            if (_mode == Component.OperatingMode.server)
             {
-                FreshClam freshClam = new FreshClam(_databaseLocation);
-                freshClam.Schedule = _update;
-                freshClam.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
-                freshClam.Start();
-                freshClam.Schedule.Start();
-            }
-
-            if (_mode == OperatingMode.combined)
-            {
-                foreach (Schedule scan in _scans)
+                if (_server != null)
                 {
-                    ClamScan clamScan = new ClamScan(_databaseLocation);
-                    clamScan.Schedule = scan;
-                    clamScan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
-                    clamScan.Start();
-                    clamScan.Schedule.Start();
+                    _server.IsBackground = true;
+                    _server.WriteConfig();
+                    _server.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _server.Start();
                 }
             }
 
-            if ((_mode == OperatingMode.combined) || (_mode == OperatingMode.client))
+            // Run freshclam
+
+            if ((_mode == Component.OperatingMode.combined) || (_mode == Component.OperatingMode.server))
             {
-                foreach (Schedule scan in _scans)
+                _update.WriteConfig();
+                _update.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                _update.Start();
+            }
+
+            // run clamdscan or clamscan depending on mode
+
+            if ((_mode == Component.OperatingMode.combined) || (_mode == Component.OperatingMode.client))
+            {
+                foreach (Component scan in _scans)
                 {
-                    ClamdScan clamdScan = new ClamdScan(_databaseLocation);
-                    clamdScan.Schedule = scan;
-                    clamdScan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
-                    clamdScan.Start();
-                    clamdScan.Schedule.Start();
+                    // could double check the actual mode here
+                    scan.WriteConfig();
+                    scan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    scan.Start();
                 }
             }
 
@@ -279,25 +258,44 @@ namespace ClamAVLibrary
         /// </summary>
         public void Dispose()
         {
-            Stop();
-            _disposed = true;
+            Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        public static OperatingMode OperatingLookup(string operatingName)
+        protected virtual void Dispose(bool disposing)
         {
-            OperatingMode operatingMode = OperatingMode.combined;
-
-            if (Int32.TryParse(operatingName, out int operatingValue))
+            log.Debug("In Dispose()");
+            if (!_disposed)
             {
-                operatingMode = (OperatingMode)operatingValue;
+                if (disposing == true)
+                {
+                    Stop();
+                    _server.Dispose();
+                    _update.Dispose();
+                    foreach (Component component in _scans)
+                    {
+                        component.Dispose();
+                    }
+                }
+                _disposed = true;
+            }
+            log.Debug("Out Dispose()");
+        }
+
+        public static Component.OperatingMode ModeLookup(string modeName)
+        {
+            Component.OperatingMode mode = Component.OperatingMode.combined;
+
+            if (Int32.TryParse(modeName, out int modeValue))
+            {
+                mode = (Component.OperatingMode)modeValue;
             }
             else
             {
-                string lookup = operatingName;
-                if (operatingName.Length > 1)
+                string lookup = modeName;
+                if (modeName.Length > 1)
                 {
-                    lookup = operatingName.ToUpper();
+                    lookup = modeName.ToUpper();
                 }
 
                 switch (lookup)
@@ -305,34 +303,33 @@ namespace ClamAVLibrary
                     case "C":
                     case "CLIENT":
                         {
-                            operatingMode = OperatingMode.client;
+                            mode = Component.OperatingMode.client;
                             break;
                         }
-                    case "c":
+                    case "L":
                     case "COMBINED":
-                    case "BOTH":
                         {
-                            operatingMode = OperatingMode.combined;
+                            mode = Component.OperatingMode.combined;
                             break;
                         }
                     case "S":
                     case "SERVER":
                         {
-                            operatingMode = OperatingMode.server;
+                            mode = Component.OperatingMode.server;
                             break;
                         }
                 }
             }
-            return (operatingMode);
+            return (mode);
         }
 
-        public static DataLocation LocationLookup(string locationName)
+        public static Component.DataLocation LocationLookup(string locationName)
         {
-            DataLocation dataLocation = DataLocation.program;
+            Component.DataLocation dataLocation = Component.DataLocation.program;
             
             if (Int32.TryParse(locationName, out int locationValue))
             {
-                dataLocation = (DataLocation)locationValue;
+                dataLocation = (Component.DataLocation)locationValue;
             }
             else
             {
@@ -349,28 +346,28 @@ namespace ClamAVLibrary
                     case "APPLICATION":
                     case "PROGRAMEDATA":
                         {
-                            dataLocation = DataLocation.app;
+                            dataLocation = Component.DataLocation.app;
                             break;
                         }
                     case "L":
                     case "LOCAL":
                     case "LOCALAPPLICATIONDATA":
                         {
-                            dataLocation = DataLocation.local;
+                            dataLocation = Component.DataLocation.local;
                             break;
                         }
                     case "P":
                     case "PROGRAM":
                     case "PROGRAMFOLDER":
                         {
-                            dataLocation = DataLocation.program;
+                            dataLocation = Component.DataLocation.program;
                             break;
                         }
                     case "R":
                     case "ROAMING":
                     case "APPLICATIONDATA":
                         {
-                            dataLocation = DataLocation.roaming;
+                            dataLocation = Component.DataLocation.roaming;
                             break;
                         }
 
@@ -378,6 +375,8 @@ namespace ClamAVLibrary
             }
             return (dataLocation);
         }
+
+
 
         #endregion
         #region Private
@@ -427,7 +426,7 @@ namespace ClamAVLibrary
                             }
                             else
                             {
-                                log.Debug("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
+                                log.Info("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
                             }
                         }
                         catch (Exception e)

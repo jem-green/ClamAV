@@ -46,10 +46,6 @@ namespace ClamAVService
             log.Debug("In OnStop.");
             if (workerThread != null)
             {
-                // showdown any threads cleanly.
-                //heartbeat.Stop();
-                //heartbeat.Dispose();
-
                 try
                 {
                     workerThread.Abort();
@@ -71,11 +67,12 @@ namespace ClamAVService
 
             int pos = 0;
             Parameter clamAVPath = new Parameter("");
-            Parameter clamAVName = new Parameter("clamAV.xml");
+            Parameter clamAVName = new Parameter("clamav.xml");
 
             clamAVPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
             pos = clamAVPath.Value.LastIndexOf('\\');
             clamAVPath.Value = clamAVPath.Value.Substring(0, pos);
+            clamAVPath.Source = Parameter.SourceType.App;
 
             try
             {
@@ -108,56 +105,17 @@ namespace ClamAVService
 
             // finally use the xml file.
 
-            // schedule the update
+            Serialise serialise = new Serialise(clamAVName.Value, clamAVPath.Value);
+            clamAV = serialise.FromXML();
+            if (clamAV != null)
+            {
+                //Launch the clamAV thread
+                clamAV.Monitor();
+                clamAV.Start();
+            }
 
-            //FreshClam freshClam = new FreshClam(FreshClam.Location.program);
-            //freshClam.WriteConfig();
-            //Schedule scanSchedule = new Schedule();
-            //scanSchedule.Timeout = 1;    // 1 minute
-            //scanSchedule.Units = Schedule.TimeoutUnit.week;
-            //scanSchedule.Interval = 60;    // i minute checking interval
-            //scanSchedule.StartDate = "10 February 2018";
-            //scanSchedule.StartTime = "00:00:00";
-            //freshClam.Schedule = scanSchedule;
-            //freshClam.Update(new FreshClam.Option("show-progress", "no", FreshClam.Option.ConfigFormat.text));
-            //freshClam.Start();
 
-            //// Add scheduled scans
-
-            //List<ClamScan> scans = new List<ClamScan>();
-
-            //// Scan drive c:
-
-            //ClamScan clamScan = new ClamScan(ClamScan.Location.program, @"c:\");
-            //clamScan.WriteConfig();
-            //scanSchedule = new Schedule();
-            //scanSchedule.Timeout = 1;    // 1 minute
-            //scanSchedule.Units = Schedule.TimeoutUnit.day;
-            //scanSchedule.Interval = 60;    // i minute checking interval
-            //scanSchedule.StartDate = "10 February 2018";
-            //scanSchedule.StartTime = "00:05:00";
-            //clamScan.Schedule = scanSchedule;
-            //clamScan.Path = @"c:\";
-            //clamScan.Start();
-            //scans.Add(clamScan);
-
-            //// Scan drive e:
-
-            //clamScan = new ClamScan(ClamScan.Location.program, @"e:\");
-            //clamScan.WriteConfig();
-            //scanSchedule = new Schedule();
-            //scanSchedule.Timeout = 1;    // 1 minute
-            //scanSchedule.Units = Schedule.TimeoutUnit.week;
-            //scanSchedule.Interval = 60;    // i minute checking interval
-            //scanSchedule.StartDate = "10 February 2018";
-            //scanSchedule.StartTime = "01:00:00";
-            //clamScan.Schedule = scanSchedule;
-            //clamScan.Path = @"e:\";
-            //clamScan.Start();
-            //scans.Add(clamScan);
-
-            log.Debug("Out ServiceWorkerMethod");        
-
+            log.Debug("Out ServiceWorkerMethod");  
         }
     }
 }

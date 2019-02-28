@@ -36,7 +36,7 @@ namespace ClamAVLibrary
 
         #region Variables
 
-        private string _Id = "";                            //
+        private string _id = "";                            //
         private DateTime _startDate;                        //
         private TimeSpan _startTime;                        //
         private long _timeout = 1;                          // Every day
@@ -105,11 +105,11 @@ namespace ClamAVLibrary
         {
             get
             {
-                return (_Id);
+                return (_id);
             }
             set
             {
-                _Id = value;
+                _id = value;
             }
         }
 
@@ -216,17 +216,17 @@ namespace ClamAVLibrary
             }
         }
 
-        public string TimeoutUnits
-        {
-            get
-            {
-                return (_units.ToString());
-            }
-            set
-            {
-                _units = UnitLookup( value);
-            }
-        }
+        //public string TimeoutUnits
+        //{
+        //    get
+        //    {
+        //        return (_units.ToString());
+        //    }
+        //    set
+        //    {
+        //        _units = UnitLookup( value);
+        //    }
+        //}
 
         public TimeoutUnit Units
         {
@@ -298,16 +298,22 @@ namespace ClamAVLibrary
         /// </summary>
         public void Dispose()
         {
-            log.Debug("In Dispose()");
-            Stop();
-            _disposed = true;
             Dispose(true);
             GC.SuppressFinalize(this);
-            log.Debug("Out Dispose()");
         }
 
         protected virtual void Dispose(bool disposing)
         {
+            log.Debug("In Dispose()");
+            if (!_disposed)
+            {
+                if (disposing == true)
+                {
+                    Stop();
+                }
+                _disposed = true;
+            }
+            log.Debug("Out Dispose()");
         }
 
         public static TimeoutUnit UnitLookup(string unitName)
@@ -378,6 +384,8 @@ namespace ClamAVLibrary
         private void Loop()
         {
             log.Debug("In Loop()");
+
+            log.Info("[" + _id + "] Schedule at " + _timeout + " " + _units.ToString() + " interval starting on " + _startDate.ToString("dd/MM/yyyy") + " " + _startTime.ToString());
 
             // process clamdscan at the defined intervals
 

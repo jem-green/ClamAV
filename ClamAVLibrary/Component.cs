@@ -8,7 +8,7 @@ using log4net;
 
 namespace ClamAVLibrary
 {
-    public class Components
+    public class Component
     {
         #region Event handling
 
@@ -32,7 +32,9 @@ namespace ClamAVLibrary
 
         #region Variables
 
+        
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        protected string _id = "";
         protected AutoResetEvent signal;
         protected object _threadLock = new object();
         protected Thread _thread;
@@ -45,14 +47,17 @@ namespace ClamAVLibrary
         protected List<Setting> _settings = null;
         protected List<Option> _options = null;
 
-        protected string _path = "";
         protected string _databasePath = "";
         protected string _logPath = "";
         protected string _logFilenamePath = "";
         protected string _configFilenamePath = "";
+        protected OperatingMode _mode = OperatingMode.combined;
+        protected DataLocation _location = DataLocation.app;
 
         protected Schedule _schedule;
         protected bool _background = false;           // Run in the foreground
+        protected string _path = "";
+        protected int _port = 3310;
 
         public struct Setting
         {
@@ -205,6 +210,22 @@ namespace ClamAVLibrary
             }
         }
 
+        public enum OperatingMode : int
+        {
+            none = -1,
+            client = 1,
+            server = 2,
+            combined = 3
+        }
+
+        public enum DataLocation : int
+        {
+            program = 0,
+            app = 1,
+            local = 2,
+            roaming = 3
+        }
+
         #endregion
         #region Constructors
 
@@ -223,6 +244,18 @@ namespace ClamAVLibrary
             }
         }
 
+        public string Id
+        {
+            get
+            {
+                return (_id);
+            }
+            set
+            {
+                _id = value;
+            }
+        }
+
         public bool IsBackground
         {
             get
@@ -235,6 +268,18 @@ namespace ClamAVLibrary
             }
         }
 
+        public DataLocation Location
+        {
+            get
+            {
+                return (_location);
+            }
+            set
+            {
+                _location = value;
+            }
+        }
+
         public Schedule Schedule
         {
             get
@@ -244,6 +289,42 @@ namespace ClamAVLibrary
             set
             {
                 _schedule = value;
+            }
+        }
+
+        public OperatingMode Mode
+        {
+            get
+            {
+                return (_mode);
+            }
+            set
+            {
+                _mode = value;
+            }
+        }
+
+        public string Path
+        {
+            get
+            {
+                return (_path);
+            }
+            set
+            {
+                _path = value;
+            }
+        }
+
+        public int Port
+        {
+            get
+            {
+                return (_port);
+            }
+            set
+            {
+                _port = value;
             }
         }
 
@@ -422,7 +503,7 @@ namespace ClamAVLibrary
                 }
             }
 
-            if (_path != "")
+            if (_path.Length > 0)
             {
                 options.Write(" " + _path);
             }
@@ -548,6 +629,7 @@ namespace ClamAVLibrary
         public void Start()
         {
             log.Debug("In Start()");
+            log.Info("[" + _id + "] start");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -573,6 +655,7 @@ namespace ClamAVLibrary
         public void Stop()
         {
             log.Debug("In Stop()");
+            log.Info("[" + _id + "] stop");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -598,13 +681,28 @@ namespace ClamAVLibrary
         /// </summary>
         public void Dispose()
         {
-            log.Debug("In Dispose()");
-            Stop();
-            _disposed = true;
+            Dispose(true);
             GC.SuppressFinalize(this);
-            log.Debug("Out Dispose()");
         }
         #endregion
+
+        protected virtual void Dispose(bool disposing)
+        {
+            log.Debug("In Dispose()");
+            if (!_disposed)
+            {
+                if (disposing == true)
+                {
+                    if (_schedule != null)
+                    {
+                        _schedule.Dispose();
+                        Stop();
+                    }
+                }
+                _disposed = true;
+            }
+            log.Debug("Out Dispose()");
+        }
 
         #region Events
 
@@ -614,7 +712,7 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim() != "")
                 {
-                    log.Info("Output=" + outputData.Data);
+                    log.Debug("[" + _id + "] Output =" + outputData.Data);
                 }
             }
         }
@@ -625,10 +723,12 @@ namespace ClamAVLibrary
             {
                 if (errorData.Data.Trim() != "")
                 {
-                    log.Error("Error=" + errorData.Data);
+                    log.Debug("[" + _id + "] Error=" + errorData.Data);
                 }
             }
         }
+
+        
 
         #endregion
         #region Private
@@ -639,6 +739,8 @@ namespace ClamAVLibrary
         private void MonitorThread()
         {
             log.Debug("In MonitorThread()");
+
+            log.Info("[" + Id + "] monitoring");
 
             try
             {
@@ -658,7 +760,7 @@ namespace ClamAVLibrary
                         log.Debug(e.ToString());
                     }
 
-                    Loop();
+                    //Loop();
                 }
             }
             catch (Exception e)
@@ -673,56 +775,56 @@ namespace ClamAVLibrary
         /// <summary>
         /// 
         /// </summary>
-        private void Loop()
-        {
-            log.Debug("In Loop()");
+        //private void Loop()
+        //{
+        //    log.Debug("In Loop()");
 
-            // process clamdscan at the defined intervals
+        //    //
 
-            signal = new AutoResetEvent(false);
-            _running = true;
+        //    signal = new AutoResetEvent(false);
+        //    _running = true;
 
-            DateTime start = DateTime.Now;    // Set the start timer
-            long timeout = 0;
-            DateTime startDateTime = new DateTime(_schedule.Date.Year, _schedule.Date.Month, _schedule.Date.Day, _schedule.Time.Hours, _schedule.Time.Minutes, _schedule.Time.Seconds);
-            int sleepFor = _schedule.Interval * 1000; // need to convert to milliseconds
-            do
-            {
-                DateTime now = DateTime.Now;
-                TimeSpan span = now.Subtract(startDateTime);
-                long elapsed = (long)span.TotalSeconds;
+        //    DateTime start = DateTime.Now;    // Set the start timer
+        //    long timeout = 0;
+        //    DateTime startDateTime = new DateTime(_schedule.Date.Year, _schedule.Date.Month, _schedule.Date.Day, _schedule.Time.Hours, _schedule.Time.Minutes, _schedule.Time.Seconds);
+        //    int sleepFor = _schedule.Interval * 1000; // need to convert to milliseconds
+        //    do
+        //    {
+        //        DateTime now = DateTime.Now;
+        //        TimeSpan span = now.Subtract(startDateTime);
+        //        long elapsed = (long)span.TotalSeconds;
 
-                // options here to either trigger at startDateTime or startDateTime + timeout
+        //        // options here to either trigger at startDateTime or startDateTime + timeout
 
-                if (elapsed < 0)
-                {
-                    // Schedule in the future
-                    timeout = -elapsed;
-                }
-                else
-                {
-                    timeout = TimeConvert(_schedule.Units, _schedule.Timeout);
-                }
+        //        if (elapsed < 0)
+        //        {
+        //            // Schedule in the future
+        //            timeout = -elapsed;
+        //        }
+        //        else
+        //        {
+        //            timeout = TimeConvert(_schedule.Units, _schedule.Timeout);
+        //        }
 
-                start = startDateTime.AddSeconds(timeout * (int)(elapsed / timeout));   // Calculate the new start
+        //        start = startDateTime.AddSeconds(timeout * (int)(elapsed / timeout));   // Calculate the new start
 
-                do
-                {
-                    signal.WaitOne(sleepFor);    // Every Interval check
-                    span = DateTime.Now.Subtract(start);
-                    log.Debug("Checking");
-                }
-                while ((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0));
+        //        do
+        //        {
+        //            signal.WaitOne(sleepFor);    // Every Interval check
+        //            span = DateTime.Now.Subtract(start);
+        //            log.Debug("Checking");
+        //        }
+        //        while ((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0));
 
-                if (_downloading == false)
-                {
-                    Launch();
-                }
-            }
-            while (_running == true);
+        //        if (_downloading == false)
+        //        {
+        //            Launch();
+        //        }
+        //    }
+        //    while (_running == true);
 
-            log.Debug("Out Loop()");
-        }
+        //    log.Debug("Out Loop()");
+        //}
 
         private void Launch()
         {
@@ -751,10 +853,11 @@ namespace ClamAVLibrary
             try
             {
                 proc.Start();
-                log.Info(startInfo.FileName + " " + startInfo.Arguments);
+                log.Info("[" + _id + "] Start " + _execute + startInfo.Arguments);
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
+                log.Info("[" + _id + "] Finished ");
             }
             catch (Exception e)
             {

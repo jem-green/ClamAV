@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.106
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "p", "ClamAVService\p.csproj", "{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClamAVService", "ClamAVService\ClamAVService.csproj", "{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClamAVLibrary", "ClamAVLibrary\ClamAVLibrary.csproj", "{A0281C25-460F-4ADE-8078-F00EFA85B041}"
 EndProject

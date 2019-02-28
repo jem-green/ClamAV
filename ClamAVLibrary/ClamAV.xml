@@ -1,22 +1,55 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <clamav>
-  <daemon>yes</daemon>
-  <database></database>
-  <confguration></confguration>
-  <log></log>
-  <scans>
-    <scan id="dive_d">
-      <startdate format="dd-MMM-yyyy">05-dec-2018</startdate>
-      <starttime format="HH:mm:ss">01:00:00</starttime>
-      <schedule>days</schedule>
+  <configuration>
+    <!--server, client or combined-->
+    <mode>combined</mode>
+    <!--Program, App, Local, Roaming-->
+    <location>program</location>
+  </configuration>
+  <server id="clamd" mode="server">
+    <!--Settings can go here, and a limited number of options-->
+    <port>3310</port>
+  </server>
+  <update id="freshclam">
+    <schedule>
+      <startdate format="dd-MMM-yyyy">10-Feb-2019</startdate>
+      <starttime format="HH:mm:ss">00:00:00</starttime>
+      <units>day</units>
       <timeout>1</timeout>
-      <path>d:\</path>
+    </schedule>
+  </update>
+  <scans>
+    <!--The problem here is defining if the scan should be a clamdscan or a clamscan and this depends on the server entry
+    which with xml could be out of sequence-->
+    <scan id="dive_c" mode="client">
+      <port>3310</port>
+      <schedule>
+        <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+        <starttime format="HH:mm:ss">01:30:00</starttime>
+        <units>day</units>
+        <timeout>1</timeout>
+        <path>c:\</path>
+      </schedule>
+    </scan>
+    <!--Assume that the mode is combined as this can proceed in a self contained way-->
+    <scan id="dive_e">
+      <schedule>
+        <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+        <starttime format="HH:mm:ss">02:00:00</starttime>
+        <units>week</units>
+        <timeout>1</timeout>
+        <path>e:\</path>
+      </schedule>
     </scan>
   </scans>
-  <syslog>
-    <host>earth</host>
-    <port>514</port>
-    <protocol>rfc3164</protocol>
-    <interface mask="24">192.168.1.0/24</interface>
-  </syslog>
+  <forwarders>
+    <forwarder id="syslog">
+      <type>SYSLOG</type>
+      <host>earth</host>
+      <protocol>rfc3164</protocol>
+      <severity>Emergency</severity>
+      <facility>Kernel</facility>
+      <port>514</port>
+    </forwarder>
+  </forwarders>
 </clamav>

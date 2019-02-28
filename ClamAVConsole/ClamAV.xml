@@ -1,33 +1,81 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <clamav>
-  <confguration>
+  <configuration>
     <!--server, client or combined-->
-    <mode>server</mode>
+    <mode>combined</mode>
     <!--Program, App, Local, Roaming-->
-    <database>program</database>
-    <!--Program, App, Local, Roaming-->
-    <log>program</log>
-    <update>
-        <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
-        <starttime format="HH:mm:ss">03:00:00</starttime>
-        <schedule>minute</schedule>
-        <timeout>1</timeout>
-    </update>
-  </confguration>
+    <location>program</location>
+  </configuration>
+  <server id="clamd" mode="server">   
+    <!--Settings can go here, and a limited number of options-->
+    <port>3310</port>
+  </server>
+  <update id="freshclam">
+    <settings>
+      <setting>
+        <key></key>
+        <value></value>
+      </setting>
+    </settings>
+    <options>
+      <option>
+        <key></key>
+        <value></value>
+      </option>
+    </options>
+    <schedule>
+      <startdate format="dd-MMM-yyyy">10-Feb-2019</startdate>
+      <starttime format="HH:mm:ss">00:00:00</starttime>
+      <units>day</units>
+      <timeout>1</timeout>
+    </schedule>
+ </update>
   <scans>
-    <scan id="dive_c">
-      <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
-      <starttime format="HH:mm:ss">00:30:00</starttime>
-      <schedule>day</schedule>
-      <timeout>1</timeout>
-      <path>c:\</path>
+    <!--The problem here is defining if the scan should be a clamdscan or a clamscan and this depends on the server entry
+    which with xml could be out of sequence-->
+    <scan id="dive_c" mode="client">
+      <port>3310</port>
+      <settings>
+        <setting>
+          <key></key>
+          <value></value>
+        </setting>
+      </settings>
+      <options>
+        <option>
+          <key></key>
+          <value></value>
+        </option>
+      </options>
+      <schedule>
+        <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+        <starttime format="HH:mm:ss">01:30:00</starttime>
+        <units>day</units>
+        <timeout>1</timeout>
+        <path>c:\</path>
+      </schedule>
     </scan>
+    <!--Assume that the mode is combined as this can proceed in a self contained way-->
     <scan id="dive_e">
-      <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
-      <starttime format="HH:mm:ss">01:00:00</starttime>
-      <schedule>week</schedule>
-      <timeout>1</timeout>
-      <path>e:\</path>
+      <settings>
+        <setting>
+          <key></key>
+          <value></value>
+        </setting>
+      </settings>
+      <options>
+        <option>
+          <key></key>
+          <value></value>
+        </option>
+      </options>
+      <schedule>
+        <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
+        <starttime format="HH:mm:ss">02:00:00</starttime>
+        <units>week</units>
+        <timeout>1</timeout>
+        <path>e:\</path>
+      </schedule>
     </scan>
   </scans>
   <forwarders>

@@ -121,6 +121,7 @@
     <Content Include="ClamAV.ico" />
     <Content Include="ClamAV.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <SubType>Designer</SubType>
     </Content>
   </ItemGroup>
   <ItemGroup>

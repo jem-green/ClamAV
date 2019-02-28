@@ -11,21 +11,24 @@ namespace ClamAVLibrary
     /// <summary>
     /// Wrapper class to manage and launch clamd
     /// </summary>
-    public class Clamd : Components
+    public class Clamd : Component
     {
         #region Variables
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private int _port = 0;
 
         #endregion
         #region Constructors
 
-        public Clamd(ClamAV.DataLocation location) : this(location, 0)
+        public Clamd() : this(DataLocation.program, 0)
         {
         }
 
-        public Clamd(ClamAV.DataLocation location, int port)
+        public Clamd(DataLocation location) : this(location, 0)
+        {
+        }
+
+        public Clamd(DataLocation location, int port)
         {
 			log.Debug("In Clamd()");
 			_execute = "clamd.exe";
@@ -37,7 +40,7 @@ namespace ClamAVLibrary
 
             switch (location)
             {
-                case ClamAV.DataLocation.app:
+                case Component.DataLocation.app:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -46,14 +49,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case ClamAV.DataLocation.program:
+                case Component.DataLocation.program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case ClamAV.DataLocation.local:
+                case Component.DataLocation.local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -62,7 +65,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case ClamAV.DataLocation.roaming:
+                case Component.DataLocation.roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -188,7 +191,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("StructuredSSNFormatNormal", null));
             _settings.Add(new Setting("StructuredSSNFormatStripped", null));
             _settings.Add(new Setting("TCPAddr", null));
-            _settings.Add(new Setting("TCPSocket", 3310,Setting.ConfigFormat.value));
+            _settings.Add(new Setting("TCPSocket", _port,Setting.ConfigFormat.value));
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));
             _settings.Add(new Setting("VirusEvent", null));
@@ -207,23 +210,10 @@ namespace ClamAVLibrary
         #endregion
         #region Properties
 
-        public int Port
-        {
-            get
-            {
-                return (_port);
-            }
-            set
-            {
-                _port = value;
-            }
-        }
-
         #endregion
         #region Methods
 
         #endregion
-
         #region Events
 
         #endregion
@@ -246,10 +236,14 @@ namespace ClamAVLibrary
             {
                 if (errorData.Data.Trim() != "")
                 {
-                    Notification notification = new Notification("genesis", "clamd", errorData.Data, Notification.EventLevel.Error);
-                    base.OutputReceived(sendingProcess, errorData);
-                    NotificationEventArgs args = new NotificationEventArgs(notification);
-                    OnSocketReceived(args);
+                    string data = errorData.Data;
+                    if (data.Substring(0, 9).ToUpper() == "WARNING: ")
+                    {
+                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Error);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
+                    base.ErrorReceived(sendingProcess, errorData);
                 }
             }
         }

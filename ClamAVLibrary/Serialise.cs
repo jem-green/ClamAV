@@ -66,6 +66,14 @@ namespace ClamAVLibrary
             ClamAV clamAV = null;
             Schedule schedule = null;
             Forwarder forwarder = null;
+            FreshClam freshClam = null;
+            Component scan = null;
+            Clamd clamd = null;
+            string key = "";
+            string value = "";
+            string id = "";
+            Component.OperatingMode mode = Component.OperatingMode.combined;
+            Component.DataLocation location = Component.DataLocation.program;
 
             try
             {
@@ -122,14 +130,22 @@ namespace ClamAVLibrary
                                         {
                                             #region ClamAV
                                             case "clamav":
-                                                {                                              
+                                                {
                                                     stack.Push(current);
                                                     current = element;
                                                     clamAV = new ClamAV();
                                                     break;
                                                 }
                                             #endregion
-                                            #region Forwarder
+                                            #region Configuration
+                                            case "configuration":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    break;
+                                                }
+                                            #endregion
+                                                    #region Forwarder
                                             case "forwarder":
                                                 {
                                                     stack.Push(current);
@@ -187,7 +203,9 @@ namespace ClamAVLibrary
                                                 {
                                                     stack.Push(current);
                                                     current = element;
-                                                    schedule = new Schedule();
+                                                    id = "";
+                                                    mode = Component.OperatingMode.combined;
+                                                    location = Component.DataLocation.program;
 
                                                     if (xmlReader.HasAttributes == true)
                                                     {
@@ -197,12 +215,34 @@ namespace ClamAVLibrary
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        schedule.Id = xmlReader.Value.ToLower();
+                                                                        id = xmlReader.Value.ToLower();
+                                                                        break;
                                                                     }
-                                                                    break;
+                                                                case "mode":
+                                                                    {
+                                                                        mode = ClamAV.ModeLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "location":
+                                                                    {
+                                                                        location = ClamAV.LocationLookup(text);
+                                                                        break;
+                                                                    }
                                                             }
                                                         }
                                                     }
+
+                                                    if (mode == Component.OperatingMode.combined)
+                                                    {
+                                                        scan = new ClamScan(id,location);
+                                                        scan.Mode = mode;
+                                                    }
+                                                    else if (mode == Component.OperatingMode.client)
+                                                    {
+                                                        scan = new ClamdScan(id,location);
+                                                        scan.Mode = mode;
+                                                    }
+
                                                     break;
                                                 }
                                             #endregion
@@ -248,11 +288,91 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
+                                            #region Server
+                                            case "server":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    id = "";
+                                                    mode = Component.OperatingMode.server;
+                                                    location = Component.DataLocation.program;
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        id = xmlReader.Value.ToLower();
+                                                                        break;
+                                                                    }
+                                                                case "mode":
+                                                                    {
+                                                                        mode = ClamAV.ModeLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "location":
+                                                                    {
+                                                                        location = ClamAV.LocationLookup(text);
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                    clamd = new Clamd(location);
+                                                    clamd.Mode = mode;
+                                                    clamd.Id = id;
+                                                    break;
+                                                }
+                                            #endregion
                                             #region Update
                                             case "update":
                                                 {
                                                     stack.Push(current);
                                                     current = element;
+                                                    id = "";
+                                                    mode = Component.OperatingMode.combined;
+                                                    location = Component.DataLocation.program;
+
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        id = xmlReader.Value.ToLower();
+                                                                        break;
+                                                                    }
+                                                                case "mode":
+                                                                    {
+                                                                        mode = ClamAV.ModeLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "location":
+                                                                    {
+                                                                        location = ClamAV.LocationLookup(text);
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    freshClam = new FreshClam(id);
+                                                    freshClam.Mode = mode;
+                                                    freshClam.Id = id;
+
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Schedule
+                                            case "schedule":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+
                                                     schedule = new Schedule();
 
                                                     if (xmlReader.HasAttributes == true)
@@ -263,17 +383,35 @@ namespace ClamAVLibrary
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        schedule.Id = xmlReader.Value.ToLower();
+                                                                        id = xmlReader.Value.ToLower();
                                                                     }
                                                                     break;
                                                             }
                                                         }
                                                     }
+                                                    schedule.Id = id;
                                                     break;
                                                 }
                                             #endregion
+                                            #region Setting
+                                            case "setting":
+                                                {
+                                                    key = "";
+                                                    value = "";
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Option
+                                            case "option":
+                                                {
+                                                    key = "";
+                                                    value = "";
+                                                    break;
+                                                }
+                                            #endregion          
                                         }
                                         break;
+
                                     }
                                 #endregion
                                 #region EndElement
@@ -284,26 +422,103 @@ namespace ClamAVLibrary
                                         log.Info(Level(level) + "</" + element + ">");
                                         switch (element)
                                         {
+                                            #region Configuration
+                                            case "configuration":
+                                                {
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            #endregion
+                                                    #region Setting
+                                            case "setting":
+                                                {
+                                                    Component.Setting setting = new Component.Setting(key, value);
+                                                    if (current == "server")
+                                                    {
+                                                        clamd.Update(setting);
+                                                    }
+                                                    else if (current == "update")
+                                                    {
+                                                        freshClam.Update(setting);
+                                                    }
+                                                    else if (current == "scan")
+                                                    {
+                                                        scan.Update(setting);
+                                                    }
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Option
+                                            case "option":
+                                                {
+                                                    Component.Option option = new Component.Option(key, value);
+                                                    if (stack.Peek() == "server")
+                                                    {
+                                                        clamd.Update(option);
+                                                    }
+                                                    else if (stack.Peek() == "update")
+                                                    {
+                                                        freshClam.Update(option);
+                                                    }
+                                                    else if (stack.Peek() == "scan")
+                                                    {
+                                                        scan.Update(option);
+                                                    }
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Forwarder
                                             case "forwarder":
                                                 {
+                                                    forwarder.Key = key;
                                                     clamAV.Add(forwarder);
                                                     current = stack.Pop();
                                                     break;
                                                 }
+                                            #endregion
+                                            #region Scan
                                             case "scan":
                                                 {
-                                                    clamAV.Scans.Add(schedule);
+                                                    // Not sure how to identify the scan
+                                                    clamAV.Scans.Add(scan);
                                                     current = stack.Pop();
                                                     break;
                                                 }
+                                            #endregion
+                                            #region Update
                                             case "update":
                                                 {
-                                                    clamAV.Update = schedule;
+                                                    clamAV.Update = freshClam;
                                                     current = stack.Pop();
                                                     break;
                                                 }
+                                            #endregion
+                                            #region Server
+                                            case "server":
+                                                {
+                                                    clamAV.Server = clamd;
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Schedule
+                                            case "schedule":
+                                                {
+                                                    if (stack.Peek() == "update")
+                                                    {
+                                                        freshClam.Schedule = schedule;
+                                                    }
+                                                    else if (stack.Peek() == "scan")
+                                                    {
+                                                        // Problem here with type of scan
+                                                        // May have to test if server, client or combined
+                                                        scan.Schedule = schedule;
+                                                    }
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                                #endregion
                                         }
-                                      
                                         break;
                                     }
                                 #endregion
@@ -318,19 +533,70 @@ namespace ClamAVLibrary
 
                                         switch (element)
                                         {
-                                            case "database":
+                                            case "key":
                                                 {
-                                                    clamAV.Database = ClamAV.LocationLookup(text);
+                                                    key = text;
                                                     break;
                                                 }
-                                            case "log":
+                                            case "value":
                                                 {
-                                                    clamAV.Log = ClamAV.LocationLookup(text);
+                                                    value = text;
+                                                    break;
+                                                }
+                                            case "location":
+                                                {
+                                                    if (current == "configuration")
+                                                    {
+                                                        try
+                                                        {
+                                                            clamAV.Location = ClamAV.LocationLookup(text);
+                                                        }
+                                                        catch { };
+                                                    }
+                                                    else if (current == "update")
+                                                    {
+                                                        try
+                                                        {
+                                                            freshClam.Location = ClamAV.LocationLookup(text);
+                                                        }
+                                                        catch { };
+                                                    }
+                                                    else if (current == "scan")
+                                                    {
+                                                        try
+                                                        {
+                                                            scan.Location = ClamAV.LocationLookup(text);
+                                                        }
+                                                        catch { };
+                                                    }
                                                     break;
                                                 }
                                             case "mode":
                                                 {
-                                                    clamAV.Mode = ClamAV.OperatingLookup(text);
+                                                    if (current == "configuration")
+                                                    {
+                                                        try
+                                                        {
+                                                            clamAV.Mode = ClamAV.ModeLookup(text);
+                                                        }
+                                                        catch { };
+                                                    }
+                                                    else if (current == "update")
+                                                    {
+                                                        try
+                                                        {
+                                                            freshClam.Mode = ClamAV.ModeLookup(text);
+                                                        }
+                                                        catch { };
+                                                    }
+                                                    else if (current == "scan")
+                                                    {
+                                                        try
+                                                        {
+                                                            scan.Mode = ClamAV.ModeLookup(text);
+                                                        }
+                                                        catch { };
+                                                    }
                                                     break;
                                                 }
                                             case "startdate":
@@ -351,11 +617,11 @@ namespace ClamAVLibrary
                                                     catch { };
                                                     break;
                                                 }
-                                            case "schedule":
+                                            case "units":
                                                 {
                                                     try
                                                     {
-                                                        schedule.TimeoutUnits = text;
+                                                        schedule.Units = Schedule.UnitLookup(text);
                                                     }
                                                     catch { };
                                                     break;
@@ -389,11 +655,6 @@ namespace ClamAVLibrary
                                                     forwarder.Host = text;
                                                     break;
                                                 }
-                                            case "key":
-                                                {
-                                                    forwarder.Key = text;
-                                                    break;
-                                                }
                                             case "monitor":
                                                 {
                                                     try
@@ -408,6 +669,11 @@ namespace ClamAVLibrary
                                                     forwarder.Password = text;
                                                     break;
                                                 }
+                                            case "path":
+                                                {
+                                                    scan.Path = text;
+                                                    break;
+                                                }
                                             case "port":
                                                 {
                                                     if (current == "forwarder")
@@ -415,6 +681,14 @@ namespace ClamAVLibrary
                                                         try
                                                         {
                                                             forwarder.Port = Convert.ToInt32(text);
+                                                        }
+                                                        catch { }
+                                                    }
+                                                    else if (current == "clamd")
+                                                    {
+                                                        try
+                                                        {
+                                                            clamd.Port = Convert.ToInt32(text);
                                                         }
                                                         catch { }
                                                     }

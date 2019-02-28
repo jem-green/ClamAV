@@ -8,7 +8,7 @@ using log4net;
 
 namespace ClamAVLibrary
 {
-    public class FreshClam : Components
+    public class FreshClam : Component
     {
         #region Variables
 
@@ -17,14 +17,19 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public FreshClam() : this(ClamAV.DataLocation.program)
+        public FreshClam() : this("", DataLocation.program)
         {
         }
 
-        public FreshClam(ClamAV.DataLocation location)
+        public FreshClam(string id) : this(id, DataLocation.program)
+        {
+        }
+
+        public FreshClam(string id, DataLocation location)
         {
             log.Debug("In FreshClam()");
 
+            _id = id;
             _execute = "freshclam.exe";
 
             _schedule = new Schedule();
@@ -34,7 +39,7 @@ namespace ClamAVLibrary
 
             switch (location)
             {
-                case ClamAV.DataLocation.app:
+                case DataLocation.app:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -43,14 +48,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case ClamAV.DataLocation.program:
+                case DataLocation.program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case ClamAV.DataLocation.local:
+                case DataLocation.local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -59,7 +64,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case ClamAV.DataLocation.roaming:
+                case DataLocation.roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -127,7 +132,7 @@ namespace ClamAVLibrary
 
             _options = new List<Option>();
             _options.Add(new Option("checks"));
-            _options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.value));
+            _options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.text));
             _options.Add(new Option("daemon-notify"));
             _options.Add(new Option("datadir"));
             _options.Add(new Option("debug"));
@@ -157,7 +162,6 @@ namespace ClamAVLibrary
         #region Methods
 
         #endregion
-
         #region Events
 
         #endregion
@@ -169,6 +173,7 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim() != "")
                 {
+                    string data = outputData.Data;
                     base.OutputReceived(sendingProcess, outputData);
                 }
             }
@@ -180,10 +185,14 @@ namespace ClamAVLibrary
             {
                 if (errorData.Data.Trim() != "")
                 {
-                    Notification notification = new Notification("genesis", "freshclam", errorData.Data, Notification.EventLevel.Error);
-                    base.OutputReceived(sendingProcess, errorData);
-                    NotificationEventArgs args = new NotificationEventArgs(notification);
-                    OnSocketReceived(args);
+                    string data = errorData.Data;
+                    if (data.Substring(0, 9).ToUpper() == "WARNING: ")
+                    {
+                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Error);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
+                    base.ErrorReceived(sendingProcess, errorData);
                 }
             }
         }
