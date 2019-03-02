@@ -156,16 +156,17 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        forwarder.Id = xmlReader.Value.ToLower();
+                                                                        forwarder.Id = text;
                                                                     }
                                                                     break;
                                                                 case "type":
                                                                     {
-                                                                        switch (xmlReader.Value.ToLower())
+                                                                        switch (text)
                                                                         {
 
                                                                             case "nma":
@@ -211,11 +212,12 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        id = xmlReader.Value.ToLower();
+                                                                        id = text;
                                                                         break;
                                                                     }
                                                                 case "mode":
@@ -253,11 +255,12 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "format":
                                                                     {
-                                                                        schedule.DateFormat = xmlReader.Value.ToLower();
+                                                                        schedule.DateFormat = text;
                                                                     }
                                                                     break;
                                                             }
@@ -274,11 +277,12 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "format":
                                                                     {
-                                                                        schedule.TimeFormat = xmlReader.Value.ToLower();
+                                                                        schedule.TimeFormat = text;
                                                                     }
                                                                     break;
                                                             }
@@ -300,11 +304,12 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        id = xmlReader.Value.ToLower();
+                                                                        id = text;
                                                                         break;
                                                                     }
                                                                 case "mode":
@@ -339,11 +344,12 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        id = xmlReader.Value.ToLower();
+                                                                        id = text;
                                                                         break;
                                                                     }
                                                                 case "mode":
@@ -379,11 +385,12 @@ namespace ClamAVLibrary
                                                     {
                                                         while (xmlReader.MoveToNextAttribute())
                                                         {
+                                                            text = xmlReader.Value.ToLower();
                                                             switch (xmlReader.Name.ToLower())
                                                             {
                                                                 case "id":
                                                                     {
-                                                                        id = xmlReader.Value.ToLower();
+                                                                        id = text;
                                                                     }
                                                                     break;
                                                             }

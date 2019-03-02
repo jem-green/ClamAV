@@ -277,8 +277,10 @@ namespace ClamAVLibrary
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
-
-            signal.Set();   // force out of the waitOne
+            if (signal != null)
+            {
+                signal.Set();   // force out of the waitOne
+            }
             _running = false;
 
             lock (_threadLock)
@@ -385,7 +387,7 @@ namespace ClamAVLibrary
         {
             log.Debug("In Loop()");
 
-            log.Info("[" + _id + "] Schedule at " + _timeout + " " + _units.ToString() + " interval starting on " + _startDate.ToString("dd/MM/yyyy") + " " + _startTime.ToString());
+            log.Info("[" + _id + "] schedule at " + _timeout + " " + _units.ToString() + " interval starting on " + _startDate.ToString("dd/MM/yyyy") + " " + _startTime.ToString());
 
             // process clamdscan at the defined intervals
 
@@ -421,15 +423,16 @@ namespace ClamAVLibrary
                     signal.WaitOne(sleepFor);    // Every Interval check
                     span = DateTime.Now.Subtract(start);
                 }
-                while ((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0));
+                while (((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0)) && (_running == true));
 
                 // need to raise the event
 
-                log.Info("Timeout");
-
-                ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now);
-                OnSocketReceived(args);
-
+                if (_running == true)
+                {
+                    log.Info("[" + _id + "] timeout");
+                    ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now);
+                    OnSocketReceived(args);
+                }
             }
             while (_running == true);
 

@@ -326,6 +326,13 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
             {
                 if (outputData.Data.Trim() != "")
                 {
+                    string data = outputData.Data;
+                    if (data.ToUpper().LastIndexOf("FOUND") > 0)
+                    {
+                        Notification notification = new Notification("clamAV", _id, data, Notification.EventLevel.Critical);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
                     base.OutputReceived(sendingProcess, outputData);
                 }
             }
@@ -340,7 +347,7 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
                     string data = errorData.Data;
                     if (data.Substring(0, 9).ToUpper() == "WARNING: ")
                     {
-                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Error);
+                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Warning);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
                         OnSocketReceived(args);
                     }

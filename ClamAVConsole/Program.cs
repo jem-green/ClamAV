@@ -38,6 +38,8 @@ namespace ClamAVConsole
             CTRL_SHUTDOWN_EVENT
         }
 
+        static ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+
         #endregion
 
         static void Main(string[] args)
@@ -120,8 +122,7 @@ namespace ClamAVConsole
                 clamAV.Monitor();
                 clamAV.Start();
             }
-
-            ManualResetEvent manualResetEvent = new ManualResetEvent(false);
+          
             manualResetEvent.WaitOne();
             log.Debug("Exit Main()");
         }
@@ -156,7 +157,7 @@ namespace ClamAVConsole
             }
             clamAV.Dispose();
             log.Debug("Exit ConsoleCtrlCheck()");
-
+            manualResetEvent.Set();
             Environment.Exit(0);
 
             return (true);

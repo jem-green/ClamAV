@@ -660,7 +660,10 @@ namespace ClamAVLibrary
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
 
-            signal.Set();   // force out of the waitOne
+            if (signal != null)
+            {
+                signal.Set();   // force out of the waitOne
+            }
             _running = false;
 
             lock (_threadLock)
@@ -712,7 +715,7 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim() != "")
                 {
-                    log.Debug("[" + _id + "] Output =" + outputData.Data);
+                    log.Debug("[" + _id + "] output =" + outputData.Data);
                 }
             }
         }
@@ -723,7 +726,7 @@ namespace ClamAVLibrary
             {
                 if (errorData.Data.Trim() != "")
                 {
-                    log.Debug("[" + _id + "] Error=" + errorData.Data);
+                    log.Debug("[" + _id + "] error=" + errorData.Data);
                 }
             }
         }
@@ -853,11 +856,11 @@ namespace ClamAVLibrary
             try
             {
                 proc.Start();
-                log.Info("[" + _id + "] Start " + _execute + startInfo.Arguments);
+                log.Info("[" + _id + "] start " + _execute + startInfo.Arguments);
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
-                log.Info("[" + _id + "] Finished ");
+                log.Info("[" + _id + "] finished ");
             }
             catch (Exception e)
             {
