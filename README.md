@@ -1,0 +1,2 @@
+# ClamAV
+A wrapper class
