@@ -251,6 +251,19 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim() != "")
                 {
+                    string data = outputData.Data;
+                    if (data.ToUpper().LastIndexOf("FOUND") > 0)
+                    {
+                        Notification notification = new Notification("clamAV", _id, data, Notification.EventLevel.Critical);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
+                    else if (data.ToUpper().LastIndexOf("ERROR") > 0)
+                    {
+                        Notification notification = new Notification("clamAV", _id, data, Notification.EventLevel.Error);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
                     base.OutputReceived(sendingProcess, outputData);
                 }
             }
