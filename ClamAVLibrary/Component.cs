@@ -345,7 +345,7 @@ namespace ClamAVLibrary
                         if (_settings[i].Key == setting.Key)
                         {
                             _settings[i] = setting;
-                            log.Info("Update setting:" + setting.Key + "=" + setting);
+                            log.Info("[" + _id + "] update setting:" + setting.Key + "=" + setting.ToString());
                         }
 
                     }
@@ -358,7 +358,7 @@ namespace ClamAVLibrary
                         if (_options[i].Key == option.Key)
                         {
                             _options[i] = option;
-                            log.Info("Update option:" + option.Key + "=" + option);
+                            log.Info("[" + _id + "] update option:" + option.Key + "=" + option.ToString());
                         }
                     }
                 }
