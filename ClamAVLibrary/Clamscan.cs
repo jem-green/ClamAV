@@ -351,6 +351,12 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
                         NotificationEventArgs args = new NotificationEventArgs(notification);
                         OnSocketReceived(args);
                     }
+                    else if (data.Substring(0, 7).ToUpper() == "ERROR: ")
+                    {
+                        Notification notification = new Notification("clamAV", _id, data.Substring(7, data.Length - 7), Notification.EventLevel.Error);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
                     base.ErrorReceived(sendingProcess, errorData);
                 }
             }

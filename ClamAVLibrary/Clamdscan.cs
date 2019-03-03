@@ -265,7 +265,13 @@ namespace ClamAVLibrary
                     string data = errorData.Data;
                     if (data.Substring(0, 9).ToUpper() == "WARNING: ")
                     {
-                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Error);
+                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Warning);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
+                    else if (data.Substring(0, 7).ToUpper() == "ERROR: ")
+                    {
+                        Notification notification = new Notification("clamAV", _id, data.Substring(7, data.Length - 7), Notification.EventLevel.Error);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
                         OnSocketReceived(args);
                     }
