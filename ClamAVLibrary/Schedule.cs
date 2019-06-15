@@ -18,13 +18,14 @@ namespace ClamAVLibrary
         /// Handles the actual event
         /// </summary>
         /// <param name="e"></param>
-        protected virtual void OnSocketReceived(ScheduleEventArgs e)
+        protected virtual void OnScheduleTimeout(ScheduleEventArgs e)
         {
             ScheduleReceived?.Invoke(this, e);
         }
 
         #endregion
 
+        #region Variables
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /*
@@ -33,8 +34,6 @@ namespace ClamAVLibrary
             <schedule>day</schedule>
             <timeout>1</timeout>
          */
-
-        #region Variables
 
         private string _id = "";                            //
         private DateTime _startDate;                        //
@@ -431,7 +430,7 @@ namespace ClamAVLibrary
                 {
                     log.Info("[" + _id + "] timeout");
                     ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now);
-                    OnSocketReceived(args);
+                    OnScheduleTimeout(args);
                 }
             }
             while (_running == true);

@@ -61,7 +61,6 @@
     <Compile Include="ScheduleEventArgs.cs" />
     <Compile Include="SocketEventArgs.cs" />
     <Compile Include="SysLog.cs" />
-    <Compile Include="System\Diagnostics\Tracing.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Doc\rfc-3164.txt" />
