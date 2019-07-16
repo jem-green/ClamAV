@@ -9,6 +9,7 @@ namespace ClamAVLibrary
     public class ClamAV : IDisposable
     {
         #region Variables
+
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         AutoResetEvent monitorSignal;
@@ -29,10 +30,7 @@ namespace ClamAVLibrary
         Dictionary<string, Forwarder> _forwarders = null;
         Component.OperatingMode _mode = Component.OperatingMode.combined;
 
-
-
         #endregion
-
         #region Constructors
 		
 		public ClamAV()
@@ -46,7 +44,6 @@ namespace ClamAVLibrary
         }	
 		
         #endregion
-
         #region Properties
 
         public Component.DataLocation Location
@@ -171,6 +168,7 @@ namespace ClamAVLibrary
                 foreach (Component scan in _scans)
                 {
                     // could double check the actual mode here
+
                     scan.WriteConfig();
                     scan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     scan.Start();
@@ -457,6 +455,5 @@ namespace ClamAVLibrary
             }
         }
         #endregion
-
     }
 }

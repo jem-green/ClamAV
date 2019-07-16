@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+
 using System.Text;
 using System.Threading;
 using log4net;
@@ -201,7 +202,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("StructuredMinSSNCount", null));
             _settings.Add(new Setting("StructuredSSNFormatNormal", null));
             _settings.Add(new Setting("StructuredSSNFormatStripped", null));
-            _settings.Add(new Setting("TCPAddr", null));
+            _settings.Add(new Setting("TCPAddr", _host, Setting.ConfigFormat.text));
             _settings.Add(new Setting("TCPSocket", _port, Setting.ConfigFormat.value));
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));

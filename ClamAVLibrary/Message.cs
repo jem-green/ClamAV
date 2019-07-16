@@ -1,12 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using log4net;
 
 namespace ClamAVLibrary
 {
-    public abstract class Message
+    /// <summary>
+    /// Syslog base message class
+    /// </summary>
+    public abstract class Message : ICloneable
     {
-        #region Viarable
+        #region Variable
+
+        protected static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public enum FacilityType : int
         {
@@ -50,12 +56,12 @@ namespace ClamAVLibrary
             Debug = 7,      // Debug: debug-level messages
         }
 
-        protected FacilityType facility = FacilityType.Kernel;
-        protected SeverityType severity = SeverityType.Emergency;
-        protected string content = "";
-        protected DateTime timeStamp = DateTime.Now;
-        protected string host = "";
-        protected string tag = "";
+        protected FacilityType _facility = FacilityType.Null;
+        protected SeverityType _severity = SeverityType.Null;
+        protected string _content = "";
+        protected DateTime _timeStamp = DateTime.Now;
+        protected string _hostName = "";
+        protected string _tag = "";
 
         #endregion
         #region Properties
@@ -64,11 +70,14 @@ namespace ClamAVLibrary
         {
             set
             {
-                facility = value;
+                if (value != FacilityType.Null) // Stop overring with null data.
+                {
+                    _facility = value;
+                }
             }
             get
             {
-                return (facility);
+                return (_facility);
             }
         }
 
@@ -76,11 +85,14 @@ namespace ClamAVLibrary
         {
             set
             {
-                severity = value;
+                if (value != SeverityType.Null)
+                {
+                    _severity = value;
+                }
             }
             get
             {
-                return (severity);
+                return (_severity);
             }
         }
 
@@ -88,11 +100,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                content = value;
+                _content = value;
             }
             get
             {
-                return (content);
+                return (_content);
             }
         }
 
@@ -100,45 +112,46 @@ namespace ClamAVLibrary
         {
             set
             {
-                timeStamp = value;
+                _timeStamp = value;
             }
             get
             {
-                return (timeStamp);
+                return (_timeStamp);
             }
         }
 
         public string Host
         {
-            get
-            {
-                return (host);
-            }
             set
             {
-                host = value;
+                if (value.Length > 0)
+                {
+                    _hostName = value;
+                }
+            }
+            get
+            {
+                return (_hostName);
             }
         }
 
         public string Tag
         {
-            get
-            {
-                return (tag);
-            }
             set
             {
-                tag = value;
-                if (tag.Length > 32)
+                if (value.Length > 0)
                 {
-                    throw new Exception("TAG name too long > 32 characters");
+                    _tag = value;
+                    if (_tag.Length > 32)
+                    {
+                        throw new Exception("TAG name too long > 32 characters");
+                    }
                 }
             }
-        }
-
-        public abstract string Payload
-        {
-            get;
+            get
+            {
+                return (_tag);
+            }
         }
 
         #endregion
@@ -350,6 +363,26 @@ namespace ClamAVLibrary
             }
             return (facilityType);
         }
+
+        public string Format(string format)
+        {
+            string content = format;
+            content = content.Replace("[severity]", _severity.ToString());
+            content = content.Replace("[facility]", _facility.ToString());
+            content = content.Replace("[host]", _hostName);
+            content = content.Replace("[timestamp]", _timeStamp.ToString());
+            content = content.Replace("[date]", _timeStamp.ToString("dd/MM/yyyy"));
+            content = content.Replace("[time]", _timeStamp.ToString("H:mm"));
+            content = content.Replace("[tag]", _tag);
+            return (content);
+        }
+
+        public object Clone()
+        {
+            return (this.MemberwiseClone());
+        }
+
+        public abstract override string ToString();
 
         #endregion
     }

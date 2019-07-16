@@ -19,8 +19,8 @@ namespace ClamAVLibrary
         string username = "";
         string password = "";
         int port = 0;
-        string host = "";
-        IPAddress hostIp = IPAddress.Parse("127.0.0.1");        // default to loopback
+        string _host = "";
+        IPAddress _hostIp = IPAddress.Parse("127.0.0.1");        // default to loopback
         string from = "";
         string to = "";
         string encrypt = "";
@@ -40,6 +40,7 @@ namespace ClamAVLibrary
 
         #endregion
         #region Constructor
+
         public Forwarder()
         {
             log.Debug("In Forwarder()");
@@ -89,12 +90,12 @@ namespace ClamAVLibrary
         {
             set
             {
-                host = value;
-                hostIp = GetIPAddress(host);
+                _host = value;
+                _hostIp = GetIPAddress(_host);
             }
             get
             {
-                return (host);
+                return (_host);
             }
         }
 
@@ -210,8 +211,9 @@ namespace ClamAVLibrary
         #region Methods
         #endregion
         #region Private
-        private IPAddress GetIPAddress(string host)
+        private static IPAddress GetIPAddress(string host)
         {
+            log.Debug("In GetIPAddress");
             IPAddress ip = IPAddress.Parse("127.0.0.1");
             try
             {
@@ -232,6 +234,7 @@ namespace ClamAVLibrary
                 }
                 catch { };
             }
+            log.Debug("Out GetIPAddress");
             return (ip);
         }
         #endregion

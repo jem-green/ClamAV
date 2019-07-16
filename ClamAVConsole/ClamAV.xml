@@ -8,7 +8,20 @@
   </configuration>
   <server id="clamd" mode="server">
     <!--Settings can go here, and a limited number of options-->
+    <interface>127.0.0.1</interface>
     <port>3310</port>
+    <settings>
+      <setting>
+        <key>tcpaddr</key>
+        <value>mars</value>
+      </setting>
+    </settings>
+    <options>
+      <option>
+        <key></key>
+        <value></value>
+      </option>
+    </options>
   </server>
   <update id="freshclam">
     <settings>
@@ -36,6 +49,7 @@
     which with xml could be out of sequence-->
     <scan id="dive_c" mode="client">
       <port>3310</port>
+      <host>mars</host>
       <settings>
         <setting>
           <key></key>

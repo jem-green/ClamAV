@@ -144,7 +144,7 @@ namespace ClamAVLibrary
             try
             {
                 UdpClient sendSocket = new UdpClient(host, port);
-                string payload = message.Payload.ToString();
+                string payload = message.ToString();
                 byte[] output = System.Text.ASCIIEncoding.ASCII.GetBytes(payload);
 
                 // Make sure the final buffer is less then 4096 bytes and if so then send the data

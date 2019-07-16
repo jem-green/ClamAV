@@ -314,7 +314,6 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
         #region Methods
 
         #endregion
-
         #region Events
 
         #endregion
