@@ -5,7 +5,7 @@ using System.Diagnostics;
 
 namespace ClamAVLibrary
 {
-    public class Notification
+    public class Event
     {
         #region Variables
 
@@ -14,25 +14,28 @@ namespace ClamAVLibrary
         EventLevel _eventLevel;
         string _eventDescription = "";
 
+        //Log levels 
+     
         public enum EventLevel
         {
-            Critical = 1,
-            Error = 2,
-            Warning = 3,
-            Information = 4,
-            Emergency =5,
-            Alert = 6,
-            Notification = 7
+            Null = -1,
+            Emergency = 0,
+            Alert = 1,
+            Critical = 2,
+            Error = 3,
+            Warning = 4,
+            Notification = 5,
+            Information = 6     
         }
 
         #endregion
         #region Constructor
 
-        public Notification()
+        public Event()
         {
         }
 
-        public Notification(string name, string application, string description, EventLevel level)
+        public Event(string name, string application, string description, EventLevel level)
         {
             _name = name;
             _application = application;

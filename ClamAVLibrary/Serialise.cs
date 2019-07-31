@@ -171,23 +171,23 @@ namespace ClamAVLibrary
 
                                                                             case "nma":
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.NMA;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.NotifyMyAndroid;
                                                                                     break;
                                                                                 }
                                                                             case "prowl":
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.Prowl;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.Prowl;
                                                                                     break;
                                                                                 }
                                                                             case "smtp":
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.SMTP;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.SMTP;
                                                                                     break;
                                                                                 }
                                                                             case "growl":
                                                                             default:
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.Growl;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.Growl;
                                                                                     break;
                                                                                 }
                                                                         }
@@ -732,28 +732,28 @@ namespace ClamAVLibrary
                                                     {
                                                         case "nma":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.NMA;
+                                                                forwarder.Type = Forwarder.ForwarderType.NotifyMyAndroid;
                                                                 break;
                                                             }
                                                         case "prowl":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.Prowl;
+                                                                forwarder.Type = Forwarder.ForwarderType.Prowl;
                                                                 break;
                                                             }
                                                         case "smtp":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.SMTP;
+                                                                forwarder.Type = Forwarder.ForwarderType.SMTP;
                                                                 break;
                                                             }
                                                         case "syslog":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.SYSLOG;
+                                                                forwarder.Type = Forwarder.ForwarderType.SYSLOG;
                                                                 break;
                                                             }
                                                         case "growl":
                                                         default:
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.Growl;
+                                                                forwarder.Type = Forwarder.ForwarderType.Growl;
                                                                 break;
                                                             }
                                                     }

@@ -1,17 +1,18 @@
-﻿using System.Net.Sockets;
+﻿using System.Net;
+using System.Net.Sockets;
 using log4net;
 
 namespace ClamAVLibrary
 {
-    public class SysLog: INotify
+    public class SysLog: Notify, INotify
     {
         #region Variables
 
         protected static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        private int port = 514;                                             // The port to use
-        private string host = "";                                           // the name to ping
-        Message.FacilityType facility = Message.FacilityType.Kernel;        //
-        Message.SeverityType severity = Message.SeverityType.Emergency;     //
+        private int _port = 514;                                             // The port to use
+        private string _host = "";                                           // the name to message
+        Message.FacilityType _facility = Message.FacilityType.Kernel;        //
+        Message.SeverityType _severity = Message.SeverityType.Emergency;     //
         PriorityOrder priority = PriorityOrder.normal;                      // The notification priority     
 
         public enum ProtocolFormat : int
@@ -27,15 +28,6 @@ namespace ClamAVLibrary
             Socket = 2
         }
 
-        public enum PriorityOrder
-        {
-            low = -2,
-            moderate = -1,
-            normal = 0,
-            high = 1,
-            emergency = 2
-        }
-
         #endregion
         #region Constructors
 
@@ -45,13 +37,13 @@ namespace ClamAVLibrary
 
         public SysLog(string host)
         {
-            this.host = host;
+            this._host = host;
         }
 
         public SysLog(string host, int port)
         {
-            this.host = host;
-            this.port = port;
+            this._host = host;
+            this._port = port;
         }
 
         #endregion
@@ -61,11 +53,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                facility = value;
+                _facility = value;
             }
             get
             {
-                return (facility);
+                return (_facility);
             }
         }
 
@@ -73,11 +65,14 @@ namespace ClamAVLibrary
         {
             get
             {
-                return (host);
+                return (_host);
             }
             set
             {
-                host = value;
+				if (value.Length > 0)
+                {
+                _host = value;
+				}
             }
         }
 
@@ -85,11 +80,14 @@ namespace ClamAVLibrary
         {
             get
             {
-                return (port);
+                return (_port);
             }
             set
             {
-                port = value;
+				if (_port != 0)
+                {
+                	_port = value;
+				}
             }
         }
 
@@ -109,11 +107,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                severity = value;
+                _severity = value;
             }
             get
             {
-                return (severity);
+                return (_severity);
             }
         }
 
@@ -122,28 +120,63 @@ namespace ClamAVLibrary
 
         public int Notify(string applicationName, string eventName, string description)
         {
-            return (Notify(applicationName, eventName, description, 0));
+            return (Notify(applicationName, eventName, description, PriorityOrder.normal));
         }	
 
         /// <summary>
         /// Send out the notifiction
         /// </summary>
         /// <returns></returns>
-        public int Notify(string applicationName, string eventName, string description, int priority)
+        public int Notify(string applicationName, string eventName, string description, PriorityOrder priority)
         {
             ErrorCode error = ErrorCode.None;
 
+            // Translate priority into severyity
+
+            Message.SeverityType severity = Message.SeverityType.Null;
+            switch (priority)
+            {
+                case PriorityOrder.low:
+                    {
+                        severity = Message.SeverityType.Info;
+                        break;
+                    }
+                case PriorityOrder.moderate:
+                    {
+                        severity = Message.SeverityType.Notice;
+                        break;
+                    }
+                case PriorityOrder.normal:
+                    {
+                        severity = Message.SeverityType.Warning;
+                        break;
+                    }
+                case PriorityOrder.high:
+                    {
+                        severity = Message.SeverityType.Alert;
+                        break;
+                    }
+                case PriorityOrder.emergency:
+                    {
+                        severity = Message.SeverityType.Emergency;
+                        break;
+                    }
+            }
+
+            // Syslog doesnt use priority as this is a combination of sevirty and facility
+
             Rfc3164 message = new Rfc3164
             {
-                Severity = this.severity,
-                Facility = this.facility,
-                Host = host
+                Severity = severity,
+                Facility = _facility,
+                HostName = System.Environment.MachineName.ToUpper()
             };
+
             message.Tag = string.Format("{0}[{1}]", eventName, applicationName);
             message.Content = description;
             try
             {
-                UdpClient sendSocket = new UdpClient(host, port);
+                UdpClient sendSocket = new UdpClient(_host, _port);
                 string payload = message.ToString();
                 byte[] output = System.Text.ASCIIEncoding.ASCII.GetBytes(payload);
 
@@ -157,6 +190,10 @@ namespace ClamAVLibrary
                     {
                         error = ErrorCode.General;
                     }
+					else
+					{
+						error = ErrorCode.None;
+					}
                 }
             }
             catch (SocketException e)
@@ -175,11 +212,25 @@ namespace ClamAVLibrary
         {
             return (0);
         }
-		
-	    public string ErrorDescription(int error)
+
+        public int Register(string applicationName, string eventName)
+        {
+            return (0);
+        }
+
+        public int Subscribe()
+        {
+            return (0);
+        }
+
+        public string ErrorDescription(int error)
+        {
+            return (ErrorDescription((ErrorCode)error));
+        }
+
+        private static string ErrorDescription(ErrorCode errorCode)
         {
             string errorDescripton = "";
-            ErrorCode errorCode = (ErrorCode)error;
             switch (errorCode)
             {
                 case ErrorCode.None:
@@ -189,53 +240,17 @@ namespace ClamAVLibrary
                     }
                 default:
                     {
-                        errorDescripton = "General error " + error;
+                        errorDescripton = "General error " + (int)errorCode;
                         break;
                     }
             }
             return (errorDescripton);
         }
 
-        public PriorityOrder PriorityLookup(string priorityName)
-        {
-            PriorityOrder priority = 0;
+        #endregion
+        #region Private
 
-            string lookup = priorityName;
-            if (priorityName.Length > 2)
-            {
-                lookup = priorityName.ToUpper();
-            }
-
-            switch (lookup)
-            {
-                case "-2":
-                case "LOW":
-                case "L":
-                    priority = PriorityOrder.low;
-                    break;
-                case "-1":
-                case "MODERATE":
-                case "M":
-                    priority = PriorityOrder.moderate;
-                    break;
-                case "0":
-                case "NORMAL":
-                case "N":
-                    priority = PriorityOrder.normal;
-                    break;
-                case "1":
-                case "HIGH":
-                case "H":
-                    priority = PriorityOrder.high;
-                    break;
-                case "2":
-                case "EMERGENCY":
-                case "E":
-                    priority = PriorityOrder.emergency;
-                    break;
-            }
-            return (priority);
-        }
         #endregion
     }
 }
+ 

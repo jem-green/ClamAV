@@ -120,7 +120,7 @@ namespace ClamAVLibrary
             }
         }
 
-        public string Host
+        public string HostName
         {
             set
             {

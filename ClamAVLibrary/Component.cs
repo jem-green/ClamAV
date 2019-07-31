@@ -45,6 +45,7 @@ namespace ClamAVLibrary
         protected bool _running = false;
         protected bool _downloading = false;
         protected string _execute = "";
+        protected Process proc;
 
         protected List<Setting> _settings = null;
         protected List<Option> _options = null;
@@ -698,6 +699,15 @@ namespace ClamAVLibrary
             if (signal != null)
             {
                 signal.Set();   // force out of the waitOne
+                if (_downloading == true)
+                {
+                    if (proc != null)
+                    {
+                        log.Debug("Kill running process (" + proc.Id + ")");
+                        // Terminate the running process
+                        proc.Kill();
+                    }
+                }
             }
             _running = false;
 
@@ -870,7 +880,8 @@ namespace ClamAVLibrary
 
             _downloading = true;
 
-            Process proc = new System.Diagnostics.Process();
+            // Enable process to be killed if still running from stop
+            proc = new System.Diagnostics.Process();
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
 
@@ -902,6 +913,8 @@ namespace ClamAVLibrary
                 log.Error(e.ToString());
             }
 
+            proc.Dispose();
+            proc = null;
             _downloading = false;
 
             log.Debug("Out Launch()");
@@ -910,7 +923,9 @@ namespace ClamAVLibrary
         // Define the event handlers.
         private void OnTimeoutReceived(object source, ScheduleEventArgs e)
         {
+            log.Debug("In OnTimeoutReceived()");
             Launch();
+            log.Debug("Out OnTimeoutReceived()");
         }
 
         private static long TimeConvert(Schedule.TimeoutUnit schedule, long timeout)
