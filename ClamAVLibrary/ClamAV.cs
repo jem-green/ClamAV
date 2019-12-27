@@ -9,10 +9,11 @@ namespace ClamAVLibrary
     public class ClamAV : IDisposable
     {
         #region Variables
+
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         AutoResetEvent monitorSignal;
-        Queue<Notification> _messageQueue;
+        Queue<Event> _messageQueue;
         private object _threadLock = new object();
         private Thread _monitoringThread;
 
@@ -29,10 +30,7 @@ namespace ClamAVLibrary
         Dictionary<string, Forwarder> _forwarders = null;
         Component.OperatingMode _mode = Component.OperatingMode.combined;
 
-
-
         #endregion
-
         #region Constructors
 		
 		public ClamAV()
@@ -40,13 +38,12 @@ namespace ClamAVLibrary
             log.Debug("in ClamAV()");
         	_update = new FreshClam();
         	_scans = new List<Component>();
-			_messageQueue = new Queue<Notification>();
+			_messageQueue = new Queue<Event>();
             _forwarders = new Dictionary<string, Forwarder>();
             log.Debug("Out ClamAV()");
         }	
 		
         #endregion
-
         #region Properties
 
         public Component.DataLocation Location
@@ -171,6 +168,7 @@ namespace ClamAVLibrary
                 foreach (Component scan in _scans)
                 {
                     // could double check the actual mode here
+
                     scan.WriteConfig();
                     scan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     scan.Start();
@@ -184,7 +182,7 @@ namespace ClamAVLibrary
                 Forwarder forwarder = entry.Value;
                 switch (forwarder.Type)
                 {
-                    case Forwarder.ForwaderType.SYSLOG:
+                    case Forwarder.ForwarderType.SYSLOG:
                         {
                             SysLog syslog = new SysLog(forwarder.Host, forwarder.Port)
                             {
@@ -226,6 +224,8 @@ namespace ClamAVLibrary
                         IsBackground = true
                     };
                     _monitoringThread.Start();
+                    Event notification = new Event("ClamAV","ClamAV", "Started", Event.EventLevel.Information);
+                    _messageQueue.Enqueue(notification);
                 }
             }
             log.Debug("Out Start()");
@@ -240,6 +240,10 @@ namespace ClamAVLibrary
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
 
+            Event notification = new Event("ClamAV", "ClamAV", "Stopped", Event.EventLevel.Information);
+            _messageQueue.Enqueue(notification);
+            Thread.Sleep(1000);
+
             monitorRunning = false;     // Exit the watch loop
             monitorSignal.Set();        // force out of the waitOne
             lock (_threadLock)
@@ -250,6 +254,8 @@ namespace ClamAVLibrary
                     monitorEventTerminate.Set();
                     thread.Join();
                 }
+
+
             }
             log.Debug("Out Stop()");
         }
@@ -412,14 +418,55 @@ namespace ClamAVLibrary
                 log.Debug("Processing queue");
                 while (_messageQueue.Count > 0)
                 {
-                    Notification clamEvent = _messageQueue.Peek();
+                    Event clamEvent = _messageQueue.Peek();
 
                     foreach (KeyValuePair<string, Forwarder> entry in _forwarders)
                     {
                         Forwarder forwarder = entry.Value;
                         try
                         {
-                            int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description);
+                            // Need to translate events to notifications
+                            Notify.PriorityOrder priority = Notify.PriorityOrder.normal;
+                            switch (clamEvent.Level)
+                            {
+                                case Event.EventLevel.Information:
+                                    {
+                                        priority = Notify.PriorityOrder.low;
+                                        break;
+                                    }
+                                case Event.EventLevel.Notification:
+                                    {
+                                        priority = Notify.PriorityOrder.moderate;
+                                        break;
+                                    }
+                                case Event.EventLevel.Warning:
+                                    {
+                                        priority = Notify.PriorityOrder.moderate;
+                                        break;
+                                    }
+                                case Event.EventLevel.Error:
+                                    {
+                                        priority = Notify.PriorityOrder.normal;
+                                        break;
+                                    }
+                                case Event.EventLevel.Critical:
+                                    {
+                                        priority = Notify.PriorityOrder.high;
+                                        break;
+                                    }
+                                case Event.EventLevel.Alert:
+                                    {
+                                        priority = Notify.PriorityOrder.high;
+                                        break;
+                                    }
+                                case Event.EventLevel.Emergency:
+                                    {
+                                        priority = Notify.PriorityOrder.emergency;
+                                        break;
+                                    }
+                            }
+
+                            int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description, priority);
                             if (error > 0)
                             {
                                 log.Error("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
@@ -457,6 +504,5 @@ namespace ClamAVLibrary
             }
         }
         #endregion
-
     }
 }

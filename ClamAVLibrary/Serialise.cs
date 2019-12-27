@@ -171,23 +171,23 @@ namespace ClamAVLibrary
 
                                                                             case "nma":
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.NMA;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.NotifyMyAndroid;
                                                                                     break;
                                                                                 }
                                                                             case "prowl":
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.Prowl;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.Prowl;
                                                                                     break;
                                                                                 }
                                                                             case "smtp":
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.SMTP;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.SMTP;
                                                                                     break;
                                                                                 }
                                                                             case "growl":
                                                                             default:
                                                                                 {
-                                                                                    forwarder.Type = Forwarder.ForwaderType.Growl;
+                                                                                    forwarder.Type = Forwarder.ForwarderType.Growl;
                                                                                     break;
                                                                                 }
                                                                         }
@@ -236,11 +236,13 @@ namespace ClamAVLibrary
 
                                                     if (mode == Component.OperatingMode.combined)
                                                     {
+                                                        // Laumch ClamScan
                                                         scan = new ClamScan(id,location);
                                                         scan.Mode = mode;
                                                     }
                                                     else if (mode == Component.OperatingMode.client)
                                                     {
+                                                        // Launch ClamdScan
                                                         scan = new ClamdScan(id,location);
                                                         scan.Mode = mode;
                                                     }
@@ -436,7 +438,7 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
-                                                    #region Setting
+                                            #region Setting
                                             case "setting":
                                                 {
                                                     Component.Setting setting = new Component.Setting(key, value);
@@ -540,16 +542,44 @@ namespace ClamAVLibrary
 
                                         switch (element)
                                         {
+                                            case "encrypt":
+                                                {
+                                                    forwarder.Encrypt = text;
+                                                    break;
+                                                }
+                                            case "facility":
+                                                {
+                                                    forwarder.Facility = Message.FacilityLookup(text);
+                                                    break;
+                                                }
+                                            case "from":
+                                                {
+                                                    forwarder.From = text;
+                                                    break;
+                                                }
+                                            case "host":
+                                                {
+                                                    if (current == "forwarder")
+                                                    {
+                                                        forwarder.Host = text;
+                                                    }
+                                                    else if (current == "scan")
+                                                    {
+                                                        scan.Host = text;
+                                                    }
+                                                    break;
+                                                }
+                                            case "interface":
+                                                {
+                                                    clamd.Interface = text;
+                                                    break;
+                                                }
                                             case "key":
                                                 {
                                                     key = text;
                                                     break;
                                                 }
-                                            case "value":
-                                                {
-                                                    value = text;
-                                                    break;
-                                                }
+
                                             case "location":
                                                 {
                                                     if (current == "configuration")
@@ -606,62 +636,7 @@ namespace ClamAVLibrary
                                                     }
                                                     break;
                                                 }
-                                            case "startdate":
-                                                {
-                                                    try
-                                                    {
-                                                        schedule.StartDate = text;
-                                                    }
-                                                    catch { };
-                                                    break;
-                                                }
-                                            case "starttime":
-                                                {
-                                                    try
-                                                    {
-                                                        schedule.StartTime = text;
-                                                    }
-                                                    catch { };
-                                                    break;
-                                                }
-                                            case "units":
-                                                {
-                                                    try
-                                                    {
-                                                        schedule.Units = Schedule.UnitLookup(text);
-                                                    }
-                                                    catch { };
-                                                    break;
-                                                }
-                                            case "timeout":
-                                                {
-                                                    try
-                                                    {
-                                                        schedule.Timeout = Convert.ToInt32(text);
-                                                    }
-                                                    catch { };
-                                                    break;
-                                                }
-                                            case "encrypt":
-                                                {
-                                                    forwarder.Encrypt = text;
-                                                    break;
-                                                }
-                                            case "facility":
-                                                {
-                                                    forwarder.Facility = Message.FacilityLookup(text);
-                                                    break;
-                                                }
-                                            case "from":
-                                                {
-                                                    forwarder.From = text;
-                                                    break;
-                                                }
-                                            case "host":
-                                                {
-                                                    forwarder.Host = text;
-                                                    break;
-                                                }
+                                            
                                             case "monitor":
                                                 {
                                                     try
@@ -707,6 +682,10 @@ namespace ClamAVLibrary
                                                     {
                                                         //clamAV.Protocol = Watcher.ProtocolFormat.rfc5424;
                                                     }
+                                                    else if (text.Trim().ToLower() == "rf3164")
+                                                    {
+                                                        //clamAV.Protocol = Watcher.ProtocolFormat.rfc3164;
+                                                    }
                                                     break;
                                                 }
                                             case "severity":
@@ -714,7 +693,34 @@ namespace ClamAVLibrary
                                                     forwarder.Severity = Message.SeverityLookup(text);
                                                     break;
                                                 }
+                                            case "startdate":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.StartDate = text;
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
+                                            case "starttime":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.StartTime = text;
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
 
+                                            case "timeout":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.Timeout = Convert.ToInt32(text);
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
                                             case "to":
                                                 {
                                                     forwarder.To = text;
@@ -726,36 +732,50 @@ namespace ClamAVLibrary
                                                     {
                                                         case "nma":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.NMA;
+                                                                forwarder.Type = Forwarder.ForwarderType.NotifyMyAndroid;
                                                                 break;
                                                             }
                                                         case "prowl":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.Prowl;
+                                                                forwarder.Type = Forwarder.ForwarderType.Prowl;
                                                                 break;
                                                             }
                                                         case "smtp":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.SMTP;
+                                                                forwarder.Type = Forwarder.ForwarderType.SMTP;
                                                                 break;
                                                             }
                                                         case "syslog":
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.SYSLOG;
+                                                                forwarder.Type = Forwarder.ForwarderType.SYSLOG;
                                                                 break;
                                                             }
                                                         case "growl":
                                                         default:
                                                             {
-                                                                forwarder.Type = Forwarder.ForwaderType.Growl;
+                                                                forwarder.Type = Forwarder.ForwarderType.Growl;
                                                                 break;
                                                             }
                                                     }
                                                     break;
                                                 }
+                                            case "units":
+                                                {
+                                                    try
+                                                    {
+                                                        schedule.Units = Schedule.UnitLookup(text);
+                                                    }
+                                                    catch { };
+                                                    break;
+                                                }
                                             case "username":
                                                 {
                                                     forwarder.Username = text;
+                                                    break;
+                                                }
+                                            case "value":
+                                                {
+                                                    value = text;
                                                     break;
                                                 }
                                         }
@@ -810,7 +830,8 @@ namespace ClamAVLibrary
         }
         #endregion
         #region Private
-        private string Level(int level)
+
+        private static string Level(int level)
         {
             string text = "";
             for (int i = 1; i < level; i++)
@@ -820,6 +841,7 @@ namespace ClamAVLibrary
             }
             return (text);
         }
+
         #endregion
     }
 }

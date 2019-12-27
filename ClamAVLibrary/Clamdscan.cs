@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+
 using System.Text;
 using System.Threading;
 using log4net;
@@ -201,7 +202,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("StructuredMinSSNCount", null));
             _settings.Add(new Setting("StructuredSSNFormatNormal", null));
             _settings.Add(new Setting("StructuredSSNFormatStripped", null));
-            _settings.Add(new Setting("TCPAddr", null));
+            _settings.Add(new Setting("TCPAddr", _host, Setting.ConfigFormat.text));
             _settings.Add(new Setting("TCPSocket", _port, Setting.ConfigFormat.value));
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));
@@ -251,6 +252,19 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim() != "")
                 {
+                    string data = outputData.Data;
+                    if (data.ToUpper().LastIndexOf("FOUND") > 0)
+                    {
+                        Event notification = new Event("ClamAV", _id, data, Event.EventLevel.Critical);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
+                    else if (data.ToUpper().LastIndexOf("ERROR") > 0)
+                    {
+                        Event notification = new Event("ClamAV", _id, data, Event.EventLevel.Error);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
                     base.OutputReceived(sendingProcess, outputData);
                 }
             }
@@ -265,7 +279,13 @@ namespace ClamAVLibrary
                     string data = errorData.Data;
                     if (data.Substring(0, 9).ToUpper() == "WARNING: ")
                     {
-                        Notification notification = new Notification("clamAV", _id, data.Substring(9, data.Length - 9), Notification.EventLevel.Error);
+                        Event notification = new Event("ClamAV", _id, data.Substring(9, data.Length - 9), Event.EventLevel.Warning);
+                        NotificationEventArgs args = new NotificationEventArgs(notification);
+                        OnSocketReceived(args);
+                    }
+                    else if (data.Substring(0, 7).ToUpper() == "ERROR: ")
+                    {
+                        Event notification = new Event("ClamAV", _id, data.Substring(7, data.Length - 7), Event.EventLevel.Error);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
                         OnSocketReceived(args);
                     }

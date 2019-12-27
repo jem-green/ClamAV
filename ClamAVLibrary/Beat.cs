@@ -51,6 +51,7 @@ namespace ClamAVLibrary
                 return (counter);
             }
         }
+
         public byte Instance
         {
             set
@@ -62,6 +63,7 @@ namespace ClamAVLibrary
                 return (instanceId);
             }
         }
+
         public string Interface
         {
             get
@@ -73,6 +75,7 @@ namespace ClamAVLibrary
                 @interface =  GetInterfaceAddress(value);
             }
         }
+
         public string IpAddress
         {
             get
@@ -84,6 +87,7 @@ namespace ClamAVLibrary
                 ip = IPAddress.Parse(value);
             }
         }
+
         public string NodeId
         {
             set
@@ -97,6 +101,7 @@ namespace ClamAVLibrary
                 return (System.Text.Encoding.Default.GetString(nodeId));
             }
         }
+
         public DateTime TimeStamp
         {
             set
@@ -290,7 +295,7 @@ namespace ClamAVLibrary
         #endregion
         #region Private
 
-        private IPAddress GetInterfaceAddress(string cidr)
+        private static IPAddress GetInterfaceAddress(string cidr)
         {
             log.Debug("In GetInterfaceAddress");
             IPAddress ip = IPAddress.Parse("127.0.0.1");

@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using log4net;
@@ -29,7 +32,6 @@ namespace ClamAVLibrary
         }
 
         #endregion
-
         #region Variables
 
         
@@ -43,6 +45,7 @@ namespace ClamAVLibrary
         protected bool _running = false;
         protected bool _downloading = false;
         protected string _execute = "";
+        protected Process proc;
 
         protected List<Setting> _settings = null;
         protected List<Option> _options = null;
@@ -58,6 +61,10 @@ namespace ClamAVLibrary
         protected bool _background = false;           // Run in the foreground
         protected string _path = "";
         protected int _port = 3310;
+        protected string _host = "";
+        protected IPAddress _hostIp = IPAddress.Parse("127.0.0.1");        // default to loopback
+        protected string _interface = "";
+        protected IPAddress _ipAddress = IPAddress.Parse("127.0.0.1");      // default to lookback
 
         public struct Setting
         {
@@ -244,6 +251,34 @@ namespace ClamAVLibrary
             }
         }
 
+        public string Host
+        {
+            set
+            {
+                _host = value;
+                _hostIp = GetIPAddress(_host);
+                Update(new Setting("TCPAddr", _hostIp));
+            }
+            get
+            {
+                return (_host);
+            }
+        }
+
+        public string Interface
+        {
+            get
+            {
+                return (_interface);
+            }
+            set
+            {
+                _interface = value;
+                _ipAddress = GetInterfaceAddress(value);
+                Update(new Setting("TCPAddr", _ipAddress));
+            }
+        }
+
         public string Id
         {
             get
@@ -325,6 +360,7 @@ namespace ClamAVLibrary
             set
             {
                 _port = value;
+                Update(new Setting("TCPSocket", _port));
             }
         }
 
@@ -345,7 +381,7 @@ namespace ClamAVLibrary
                         if (_settings[i].Key == setting.Key)
                         {
                             _settings[i] = setting;
-                            log.Info("Update setting:" + setting.Key + "=" + setting);
+                            log.Info("[" + _id + "] update setting:" + setting.Key + "=" + setting.ToString());
                         }
 
                     }
@@ -358,7 +394,7 @@ namespace ClamAVLibrary
                         if (_options[i].Key == option.Key)
                         {
                             _options[i] = option;
-                            log.Info("Update option:" + option.Key + "=" + option);
+                            log.Info("[" + _id + "] update option:" + option.Key + "=" + option.ToString());
                         }
                     }
                 }
@@ -663,6 +699,15 @@ namespace ClamAVLibrary
             if (signal != null)
             {
                 signal.Set();   // force out of the waitOne
+                if (_downloading == true)
+                {
+                    if (proc != null)
+                    {
+                        log.Debug("Kill running process (" + proc.Id + ")");
+                        // Terminate the running process
+                        proc.Kill();
+                    }
+                }
             }
             _running = false;
 
@@ -687,7 +732,6 @@ namespace ClamAVLibrary
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-        #endregion
 
         protected virtual void Dispose(bool disposing)
         {
@@ -707,13 +751,14 @@ namespace ClamAVLibrary
             log.Debug("Out Dispose()");
         }
 
+        #endregion
         #region Events
 
         public virtual void OutputReceived(object sendingProcess, DataReceivedEventArgs outputData)
         {
             if ((outputData != null) && (outputData.Data != null))
             {
-                if (outputData.Data.Trim() != "")
+                if (outputData.Data.Trim().Length > 0)
                 {
                     log.Debug("[" + _id + "] output =" + outputData.Data);
                 }
@@ -724,7 +769,7 @@ namespace ClamAVLibrary
         {
             if ((errorData != null) && (errorData.Data != null))
             {
-                if (errorData.Data.Trim() != "")
+                if (errorData.Data.Trim().Length > 0)
                 {
                     log.Debug("[" + _id + "] error=" + errorData.Data);
                 }
@@ -835,7 +880,8 @@ namespace ClamAVLibrary
 
             _downloading = true;
 
-            Process proc = new System.Diagnostics.Process();
+            // Enable process to be killed if still running from stop
+            proc = new System.Diagnostics.Process();
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
 
@@ -867,6 +913,8 @@ namespace ClamAVLibrary
                 log.Error(e.ToString());
             }
 
+            proc.Dispose();
+            proc = null;
             _downloading = false;
 
             log.Debug("Out Launch()");
@@ -875,10 +923,12 @@ namespace ClamAVLibrary
         // Define the event handlers.
         private void OnTimeoutReceived(object source, ScheduleEventArgs e)
         {
+            log.Debug("In OnTimeoutReceived()");
             Launch();
+            log.Debug("Out OnTimeoutReceived()");
         }
 
-        long TimeConvert(Schedule.TimeoutUnit schedule, long timeout)
+        private static long TimeConvert(Schedule.TimeoutUnit schedule, long timeout)
         {
             log.Debug("In TimeConvert()");
             long seconds = timeout;
@@ -912,8 +962,87 @@ namespace ClamAVLibrary
             return (seconds);
         }
 
-        #endregion
+        private static IPAddress GetInterfaceAddress(string cidr)
+        {
+            log.Debug("In GetInterfaceAddress()");
+            IPAddress ip = IPAddress.Parse("127.0.0.1");
+            int mask = 32;
+            long subnet = 0;
+
+            try
+            {
+                if (cidr.Contains("/"))
+                {
+                    mask = Convert.ToInt32(cidr.Substring(cidr.IndexOf('/') + 1));
+                    ip = IPAddress.Parse(cidr.Substring(0, cidr.IndexOf('/')));
+                    subnet = BitConverter.ToInt32(ip.GetAddressBytes(), 0);
+                    ip = IPAddress.Parse("127.0.0.1");
+                }
+                else
+                {
+                    ip = IPAddress.Parse(cidr);
+                    subnet = BitConverter.ToInt32(ip.GetAddressBytes(), 0);
+                }
+            }
+            catch { };
+
+            foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (ip.ToString() == "127.0.0.1")
+                {
+                    break;
+                }
+                else
+                {
+                    if ((networkInterface.OperationalStatus == OperationalStatus.Up) && (networkInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet || networkInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211))
+                    {
+                        foreach (UnicastIPAddressInformation addressInformation in networkInterface.GetIPProperties().UnicastAddresses)
+                        {
+                            if (addressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
+                            {
+                                long ipAddress = BitConverter.ToInt32(addressInformation.Address.GetAddressBytes(), 0);
+                                if ((subnet & mask) == (ipAddress & mask))
+                                {
+                                    ip = addressInformation.Address;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            log.Debug("Out GetInterfaceAddress()");
+            return (ip);
+        }
+
+        private static IPAddress GetIPAddress(string host)
+        {
+            log.Debug("In GetIPAddress");
+            IPAddress ip = IPAddress.Parse("127.0.0.1");
+            try
+            {
+                IPHostEntry hostEntry = Dns.GetHostEntry(host);
+                if (hostEntry.AddressList.Length > 0)
+                {
+                    if (hostEntry.AddressList[0].AddressFamily == AddressFamily.InterNetwork)
+                    {
+                        ip = hostEntry.AddressList[0];
+                    }
+                }
+            }
+            catch
+            {
+                try
+                {
+                    ip = IPAddress.Parse(host);
+                }
+                catch { };
+            }
+            log.Debug("Out GetIPAddress");
+            return (ip);
+        }
     }
+    #endregion
 }
 
 

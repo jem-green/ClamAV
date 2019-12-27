@@ -99,7 +99,7 @@
       <SubType>Designer</SubType>
     </None>
     <None Include="ClamAV_install.bat">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="ClamAV_go.bat">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

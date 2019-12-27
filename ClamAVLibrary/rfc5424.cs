@@ -9,195 +9,100 @@ namespace ClamAVLibrary
         // http://www.ietf.org/rfc/rfc5424.txt
 
         #region variables
-
-        private struct PriStruct
-        {
-            public FacilityType Facility { get; set; }
-            public SeverityType Severity { get; set; }
-
-            public PriStruct(string facility, string severity) : this()
-            {
-                this.Facility = (FacilityType)Enum.Parse(typeof(FacilityType), facility);
-                this.Severity = (SeverityType)Enum.Parse(typeof(SeverityType), severity);
-            }
-
-            public PriStruct(string priorityNumber) : this()
-            {
-                int priority = Convert.ToInt32(priorityNumber);
-                int intFacility = priority >> 3;  // divide by 8 by shifting left
-                int intSeverity = priority & 0x7; // and with 7 to mask out
-                this.Facility = (FacilityType)Enum.Parse(typeof(FacilityType), intFacility.ToString());
-                this.Severity = (SeverityType)Enum.Parse(typeof(SeverityType), intSeverity.ToString());
-            }
-            public PriStruct(Int32 priority) : this()
-            {
-                int facility = priority >> 3;  // divide by 8 by shifting left
-                int severity = priority & 0x7; // and with 7 to mask out
-                this.Facility = (FacilityType)Enum.Parse(typeof(FacilityType), facility.ToString());
-                this.Severity = (SeverityType)Enum.Parse(typeof(SeverityType), severity.ToString());
-            }
-            public override string ToString()
-            {
-                //export values to a valid pri structure
-                return string.Format("{0}.{1}", this.Facility, this.Severity);
-            }
-        }
-
-        private struct HeaderStruct
-        {
-            public DateTime TimeStamp { get; set; }
-            public string HostName { get; set; }
-
-            public HeaderStruct(DateTime timeStamp, string hostName) : this()
-            {
-                this.TimeStamp = timeStamp;
-                this.HostName = hostName;
-            }
-
-            public HeaderStruct(DateTime timeStamp) : this()
-            {
-                this.TimeStamp = timeStamp;
-                this.HostName = null;
-            }
-        }
-
-        private struct MsgStruct
-        {
-            public string Tag { get; set; }
-            public string Content { get; set; }
-
-            public MsgStruct(string tag, string content) : this()
-            {
-                this.Tag = tag;
-                this.Content = content;
-            }
-
-            public MsgStruct(string content) : this()
-            {
-                this.Tag = System.Environment.MachineName;
-                this.Content = content;
-            }
-        }
-
-        private struct MessageStruct
-        {
-            public PriStruct Pri { get; set; }
-
-            public HeaderStruct Header { get; set; }
-
-            public MsgStruct Msg { get; set; }
-
-            public MessageStruct(PriStruct PRI, HeaderStruct HEADER, MsgStruct MSG) : this()
-            {
-                this.Pri = PRI;
-                this.Header = HEADER;
-                this.Msg = MSG;
-            }
-
-            public MessageStruct(string Message) : this()
-            {
-                Regex mRegex = new Regex("<(?<PRI>([0-9]{1,3}))>(?<MSG>.*)", RegexOptions.Compiled);
-                Match tmpMatch = mRegex.Match(Message);
-                this.Pri = new PriStruct(tmpMatch.Groups["PRI"].Value);
-                this.Header = new HeaderStruct(DateTime.Now, null);
-                this.Msg = new MsgStruct(tmpMatch.Groups["MSG"].Value);
-            }
-
-            public MessageStruct(string message, string hostName) : this()
-            {
-                Regex mRegex = new Regex("<(?<PRI>([0-9]{1,3}))>(?<MSG>.*)", RegexOptions.Compiled);
-                Match tmpMatch = mRegex.Match(message);
-                this.Pri = new PriStruct(tmpMatch.Groups["PRI"].Value);
-                this.Header = new HeaderStruct(DateTime.Now, hostName);
-                this.Msg = new MsgStruct(tmpMatch.Groups["MSG"].Value);
-            }
-
-            public MessageStruct(string tag, string message, string hostName) : this()
-            {
-                Regex mRegex = new Regex("<(?<PRI>([0-9]{1,3}))>(?<MSG>.*)", RegexOptions.Compiled);
-                Match tmpMatch = mRegex.Match(message);
-                this.Pri = new PriStruct(tmpMatch.Groups["PRI"].Value);
-                this.Header = new HeaderStruct(DateTime.Now, hostName);
-                this.Msg = new MsgStruct("", tmpMatch.Groups["MSG"].Value);
-            }
-
-            public override string ToString()
-            {
-                return (string.Format("<{0}>{1} {2} {3}: {4}", ((int)Pri.Facility * 8) + (int)Pri.Severity, Header.TimeStamp.ToString("MMM dd HH:mm:ss"), Header.HostName, Msg.Tag, Msg.Content));
-            }
-        }
-
         #endregion
-        #region Constructors
+        #region Constructor
 
         public Rfc5424()
         {
-            severity = SeverityType.Emergency;     // The message severity
-            facility = FacilityType.Kernel;        // The type of message
-            DateTime timeStamp = DateTime.Now;
+
         }
 
         public Rfc5424(string message)
         {
-            severity = SeverityType.Emergency;     // The message severity
-            facility = FacilityType.Kernel;        // The type of message
-            DateTime timeStamp = DateTime.Now;
-            content = message;
-        }
+            // Decode messgae
 
-        public Rfc5424(string message, string severity, string facility)
-        {
-            SeverityType severityType = SeverityLookup(severity);   // The message severity
-            FacilityType facilityType = FacilityLookup(facility);   // The type of message
-            DateTime timeStamp = DateTime.Now;
-            content = message;
-        }
+            //<(?<PRI>([0-9]{1,3}))>(?<HEADER>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}\s[\-\[\]a-zA-Z0-9:.]+\s)(?<MSG>.*)
+            string test = @"<(?<PRI>([0-9]{1,3}))>(?<HEADER>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}\s[\-\[\]a-zA-Z0-9:.]+\s)(?<MSG>.*)";
+            Regex mRegex = new Regex(test, RegexOptions.Compiled);
+            Match tmpMatch = mRegex.Match(message);
+            string pri = tmpMatch.Groups["PRI"].Value;
+            string header = tmpMatch.Groups["HEADER"].Value.TrimEnd();
+            string msg = tmpMatch.Groups["MSG"].Value.TrimEnd();
+            log.Debug("pri='" + pri + "'");
+            log.Debug("header='" + header + "'");
+            log.Debug("msg='" + msg + "'");
 
-        public Rfc5424(string message, DateTime timeStamp, string severity, string facility)
-        {
-            SeverityType severityType = SeverityLookup(severity);   // The message severity
-            FacilityType facilityType = FacilityLookup(facility);   // The type of message
-            content = message;
-        }
+            //Decode Pri
 
-        public Rfc5424(string message, SeverityType severityType, FacilityType facilityType)
-        {
-            DateTime timeStamp = DateTime.Now;
-            content = message;
+            int priority = Convert.ToInt32(pri);
+            int facility = priority >> 3;  // divide by 8 by shifting left
+            int severity = priority & 0x7; // and with 7 to mask out
+            _facility = (FacilityType)Enum.Parse(typeof(FacilityType), facility.ToString());
+            _severity = (SeverityType)Enum.Parse(typeof(SeverityType), severity.ToString());
+
+            //Decode header
+
+            int pos = header.LastIndexOf(' ');
+            if (pos > 0)
+            {
+                _timeStamp = ToDateTime(header.Substring(0, pos));
+                _hostName = header.Substring(pos + 1, header.Length - pos - 1);
+                log.Debug("timestamp='" + _timeStamp + "'");
+                log.Debug("hostname='" + _hostName + "'");
+            }
+            else
+            {
+                _timeStamp = ToDateTime(header);
+                _hostName = "";
+            }
+
+            //Decode msg
+
+            // (?<TAG>[a-zA-Z0-0]*)(?<CONTENT>[^a-zA-Z0-9].*)
+            test = @"(?<TAG>[a-zA-Z0-0]*)(?<CONTENT>[^a-zA-Z0-9].*)";
+            mRegex = new Regex(test, RegexOptions.Compiled);
+            tmpMatch = mRegex.Match(msg);
+            _tag = tmpMatch.Groups["TAG"].Value;
+            _content = tmpMatch.Groups["CONTENT"].Value.TrimEnd();
+            if (_tag.Length == 0)
+            {
+                _tag = Environment.MachineName;
+            }
         }
 
         #endregion
         #region Properties
+        #endregion
+        #region Methods
 
-        public override string Payload
+        public override string ToString()
         {
-            get
+            return (string.Format("<{0}>{1} {2} {3}: {4}", ((int)_facility * 8) + (int)_severity, _timeStamp.ToString("MMM dd HH:mm:ss"), _hostName, _tag, _content));
+        }
+
+        #endregion
+        #region Private
+
+        private static DateTime ToDateTime(string dateString)
+        {
+            /* 
+             * Jan 01 12:00:00
+             * 012345678901234
+             */
+            DateTime dateTime = DateTime.Now;
+            try
             {
-                MessageStruct messsageStructure;
-
-                if ((facility != FacilityType.Null) && (severity != SeverityType.Null))
-                {
-                    PriStruct PRI = new PriStruct
-                    {
-                        Facility = facility,
-                        Severity = severity
-                    };
-
-                    HeaderStruct HEADER = new HeaderStruct
-                    {
-                        TimeStamp = timeStamp,
-                        HostName = host
-                    };
-
-                    MsgStruct MSG = new MsgStruct(tag, content);
-                    messsageStructure = new MessageStruct(PRI, HEADER, MSG);
-                }
-                else
-                {
-                    messsageStructure = new MessageStruct(content);
-                }
-                return (messsageStructure.ToString());
+                string monthName = dateString.Substring(0, 3);
+                string months = "janfebmaraprmayjunjulaugsepoctnovdec";
+                int month = 1 + months.IndexOf(monthName.ToLower()) / 3;
+                int day = Convert.ToInt32(dateString.Substring(3, 3));
+                int hour = Convert.ToInt32(dateString.Substring(7, 2));
+                int minute = Convert.ToInt32(dateString.Substring(10, 2));
+                int second = Convert.ToInt32(dateString.Substring(13, 2));
+                dateTime = new DateTime(DateTime.Now.Year, month, day, hour, minute, second);
             }
+            catch { }
+            return (dateTime);
         }
 
         #endregion

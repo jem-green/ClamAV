@@ -78,14 +78,14 @@ namespace ClamAVService
             {
                 RegistryKey key = Registry.LocalMachine;
                 key = key.OpenSubKey("software\\green\\clamav\\");
-                if (key.GetValue("path", "").ToString() != "")
+                if (key.GetValue("path", "").ToString().Length > 0)
                 {
                     clamAVPath.Value = (string)key.GetValue("path", clamAVPath);
                     clamAVPath.Source = Parameter.SourceType.Registry;
                     log.Debug("Use registry value Name=" + clamAVPath);
                 }
 
-                if (key.GetValue("name", "").ToString() != "")
+                if (key.GetValue("name", "").ToString().Length > 0)
                 {
                     clamAVName.Value = (string)key.GetValue("name", clamAVName);
                     clamAVName.Source = Parameter.SourceType.Registry;

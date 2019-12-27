@@ -84,7 +84,7 @@
   <forwarders>
     <forwarder id="syslog">
       <type>SYSLOG</type>
-      <host>10.0.0.1</host>
+      <host>earth</host>
       <protocol>rfc3164</protocol>
       <severity>Emergency</severity>
       <facility>Kernel</facility>

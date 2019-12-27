@@ -8,17 +8,17 @@ namespace ClamAVLibrary
     public class NotificationEventArgs : EventArgs
     {
         #region Variables
-        private Notification _notification;
+        private Event _notification;
         #endregion
         #region Constructor
-        public NotificationEventArgs(Notification notification)
+        public NotificationEventArgs(Event notification)
         {
             this._notification = notification;
         }
         #endregion
         #region Properties
 
-        public Notification Notification
+        public Event Notification
         {
             set
             {
