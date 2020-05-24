@@ -12,14 +12,14 @@ namespace ClamAVLibrary
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        AutoResetEvent monitorSignal;
+        AutoResetEvent _monitorSignal;
         Queue<Event> _messageQueue;
         private object _threadLock = new object();
         private Thread _monitoringThread;
 
         private bool _disposed = false;
         private ManualResetEvent monitorEventTerminate = new ManualResetEvent(false);
-        bool monitorRunning = true;	
+        bool _monitorRunning = true;	
         private int monitorInterval = 60000;
 		
         private Component.DataLocation _location = Component.DataLocation.app;
@@ -36,7 +36,7 @@ namespace ClamAVLibrary
 		public ClamAV()
         {
             log.Debug("in ClamAV()");
-        	_update = new FreshClam();
+            _update = new FreshClam();
         	_scans = new List<Component>();
 			_messageQueue = new Queue<Event>();
             _forwarders = new Dictionary<string, Forwarder>();
@@ -224,8 +224,10 @@ namespace ClamAVLibrary
                         IsBackground = true
                     };
                     _monitoringThread.Start();
-                    Event notification = new Event("ClamAV","ClamAV", "Started", Event.EventLevel.Information);
+                    Event notification = new Event("ClamAV","ClamAV", "Started",Event.EventLevel.Emergency);
                     _messageQueue.Enqueue(notification);
+                    Thread.Sleep(1000);         // Wait for the monitoring loop to start
+                    _monitorSignal.Set();       // force out of the waitOne
                 }
             }
             log.Debug("Out Start()");
@@ -240,12 +242,13 @@ namespace ClamAVLibrary
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
 
-            Event notification = new Event("ClamAV", "ClamAV", "Stopped", Event.EventLevel.Information);
+            Event notification = new Event("ClamAV", "ClamAV", "Stopped", Event.EventLevel.Emergency);
             _messageQueue.Enqueue(notification);
+            _monitorSignal.Set();        // force out of the waitOne
             Thread.Sleep(1000);
 
-            monitorRunning = false;     // Exit the watch loop
-            monitorSignal.Set();        // force out of the waitOne
+            _monitorRunning = false;     // Exit the watch loop
+            _monitorSignal.Set();        // force out of the waitOne
             lock (_threadLock)
             {
                 Thread thread = _monitoringThread;
@@ -410,11 +413,11 @@ namespace ClamAVLibrary
 
             // Monitor messages received from the scanner or updater
 
-            monitorSignal = new AutoResetEvent(false);
-            monitorRunning = true;
+            _monitorSignal = new AutoResetEvent(false);
+            _monitorRunning = true;
             do
             {
-                monitorSignal.WaitOne(monitorInterval);
+                _monitorSignal.WaitOne(monitorInterval);
                 log.Debug("Processing queue");
                 while (_messageQueue.Count > 0)
                 {
@@ -486,7 +489,7 @@ namespace ClamAVLibrary
                 }
                 log.Debug("Processed queue");
             }
-            while (monitorRunning == true);
+            while (_monitorRunning == true);
 
             log.Debug("Out MonitorLoop()");
         }
@@ -499,7 +502,7 @@ namespace ClamAVLibrary
                 if (e.Notification.Name.Length > 0)
                 {
                     _messageQueue.Enqueue(e.Notification);
-                    monitorSignal.Set();
+                    _monitorSignal.Set();
                 }
             }
         }

@@ -83,7 +83,7 @@ namespace ClamAVLibrary
             {
                 log.Error(e.ToString());
                 _timeStamp = DateTime.Now;
-                _hostName = Environment.MachineName;
+                _hostName = Environment.MachineName.ToUpper();
             }
             log.Debug("timestamp='" + _timeStamp + "'");
             log.Debug("hostname='" + _hostName + "'");

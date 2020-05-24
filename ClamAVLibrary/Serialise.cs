@@ -145,7 +145,7 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
-                                                    #region Forwarder
+                                            #region Forwarder
                                             case "forwarder":
                                                 {
                                                     stack.Push(current);
@@ -608,6 +608,7 @@ namespace ClamAVLibrary
                                                     }
                                                     break;
                                                 }
+                                            #region Mode
                                             case "mode":
                                                 {
                                                     if (current == "configuration")
@@ -636,7 +637,7 @@ namespace ClamAVLibrary
                                                     }
                                                     break;
                                                 }
-                                            
+                                            #endregion
                                             case "monitor":
                                                 {
                                                     try

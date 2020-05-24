@@ -192,7 +192,8 @@ namespace ClamAVLibrary
                     }
 					else
 					{
-						error = ErrorCode.None;
+                        log.Debug("Sent -> " + message);
+                        error = ErrorCode.None;
 					}
                 }
             }
