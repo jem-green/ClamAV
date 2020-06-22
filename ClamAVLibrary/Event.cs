@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Diagnostics;
-
-namespace ClamAVLibrary
+﻿namespace ClamAVLibrary
 {
     public class Event
     {
@@ -13,9 +8,10 @@ namespace ClamAVLibrary
         string _name = "";
         EventLevel _eventLevel;
         string _eventDescription = "";
+        EventType _type = EventType.Null;
 
         //Log levels 
-     
+
         public enum EventLevel
         {
             Null = -1,
@@ -25,7 +21,19 @@ namespace ClamAVLibrary
             Error = 3,
             Warning = 4,
             Notification = 5,
-            Information = 6     
+            Information = 6
+        }
+
+        //Event types
+
+        public enum EventType
+        {
+            Null = -1,
+            Notification = 0,
+            Pause = 1,
+            Resume = 2,
+            Stop = 3,
+            Start = 4
         }
 
         #endregion
@@ -40,7 +48,17 @@ namespace ClamAVLibrary
             _name = name;
             _application = application;
             _eventDescription = description;
-            _eventLevel = level;      
+            _eventLevel = level;
+            _type = EventType.Notification;
+        }
+
+        public Event(string name, string application, string description, EventLevel level, EventType type)
+        {
+            _name = name;
+            _application = application;
+            _eventDescription = description;
+            _eventLevel = level;
+            _type = type;
         }
 
         #endregion
@@ -91,6 +109,18 @@ namespace ClamAVLibrary
             get
             {
                 return (_name);
+            }
+        }
+
+        public EventType Type
+        {
+            set
+            {
+                _type = value;
+            }
+            get
+            {
+                return (_type);
             }
         }
 

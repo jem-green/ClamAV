@@ -1,11 +1,8 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-
-using System.Text;
-using System.Threading;
-using log4net;
 
 namespace ClamAVLibrary
 {
@@ -21,7 +18,7 @@ namespace ClamAVLibrary
         #endregion
         #region Constructor
 
-        public ClamdScan(string id) : this(id, DataLocation.program, "", 0)
+        public ClamdScan(string id) : this(id, DataLocation.Program, "", 0)
         {
         }
 
@@ -29,7 +26,7 @@ namespace ClamAVLibrary
         {
         }
 
-        public ClamdScan(string id, string path) : this(id, DataLocation.program, path, 0)
+        public ClamdScan(string id, string path) : this(id, DataLocation.Program, path, 0)
         {
         }
 
@@ -38,7 +35,7 @@ namespace ClamAVLibrary
             log.Debug("In ClamdScan()");
 
             _id = id;
-			_execute = "clamdscan.exe";
+            _execute = "clamdscan.exe";
             if (port != 0)
             {
                 this._port = port;
@@ -52,7 +49,7 @@ namespace ClamAVLibrary
             string basePath = "";
             switch (location)
             {
-                case Component.DataLocation.app:
+                case Component.DataLocation.App:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -61,14 +58,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Component.DataLocation.program:
+                case Component.DataLocation.Program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case Component.DataLocation.local:
+                case Component.DataLocation.Local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -77,7 +74,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Component.DataLocation.roaming:
+                case Component.DataLocation.Roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -99,6 +96,10 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamdscan.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamdscan.conf";
+
+            // Not sure about the hardcoding here
+
+            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
             _settings.Add(new Setting("AlgorithmicDetection", null));
@@ -213,7 +214,7 @@ namespace ClamAVLibrary
             _options = new List<Option>();
             _options.Add(new Option("help"));
             _options.Add(new Option("version"));
-			_options.Add(new Option("debug"));
+            _options.Add(new Option("debug"));
             _options.Add(new Option("quiet"));
             _options.Add(new Option("log"));
             _options.Add(new Option("file-list"));
@@ -250,7 +251,7 @@ namespace ClamAVLibrary
         {
             if ((outputData != null) && (outputData.Data != null))
             {
-                if (outputData.Data.Trim() != "")
+                if (outputData.Data.Trim().Length > 0)
                 {
                     string data = outputData.Data;
                     if (data.ToUpper().LastIndexOf("FOUND") > 0)
@@ -274,7 +275,7 @@ namespace ClamAVLibrary
         {
             if ((errorData != null) && (errorData.Data != null))
             {
-                if (errorData.Data.Trim() != "")
+                if (errorData.Data.Trim().Length > 0)
                 {
                     string data = errorData.Data;
                     if (data.Substring(0, 9).ToUpper() == "WARNING: ")

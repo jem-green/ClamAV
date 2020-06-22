@@ -1,4 +1,5 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -7,7 +8,6 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using log4net;
 
 namespace ClamAVLibrary
 {
@@ -34,10 +34,9 @@ namespace ClamAVLibrary
         #endregion
         #region Variables
 
-        
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         protected string _id = "";
-        protected AutoResetEvent signal;
+        protected AutoResetEvent _signal = new AutoResetEvent(false);
         protected object _threadLock = new object();
         protected Thread _thread;
         protected bool _disposed = false;
@@ -50,12 +49,13 @@ namespace ClamAVLibrary
         protected List<Setting> _settings = null;
         protected List<Option> _options = null;
 
+        protected string _executePath = "";
         protected string _databasePath = "";
         protected string _logPath = "";
         protected string _logFilenamePath = "";
         protected string _configFilenamePath = "";
-        protected OperatingMode _mode = OperatingMode.combined;
-        protected DataLocation _location = DataLocation.app;
+        protected OperatingMode _mode = OperatingMode.Combined;
+        protected DataLocation _location = DataLocation.App;
 
         protected Schedule _schedule;
         protected bool _background = false;           // Run in the foreground
@@ -219,18 +219,18 @@ namespace ClamAVLibrary
 
         public enum OperatingMode : int
         {
-            none = -1,
-            client = 1,
-            server = 2,
-            combined = 3
+            None = 0,
+            Client = 1,
+            Server = 2,
+            Combined = 3
         }
 
         public enum DataLocation : int
         {
-            program = 0,
-            app = 1,
-            local = 2,
-            roaming = 3
+            Program = 0,
+            App = 1,
+            Local = 2,
+            Roaming = 3
         }
 
         #endregion
@@ -381,9 +381,8 @@ namespace ClamAVLibrary
                         if (_settings[i].Key == setting.Key)
                         {
                             _settings[i] = setting;
-                            log.Info("[" + _id + "] update setting:" + setting.Key + "=" + setting.ToString());
+                            log.Info("[" + _id + "] update setting:" + setting.Key + "=" + setting.Value.ToString());
                         }
-
                     }
                 }
                 else
@@ -394,7 +393,7 @@ namespace ClamAVLibrary
                         if (_options[i].Key == option.Key)
                         {
                             _options[i] = option;
-                            log.Info("[" + _id + "] update option:" + option.Key + "=" + option.ToString());
+                            log.Info("[" + _id + "] update option:" + option.Key + "=" + option.Value.ToString());
                         }
                     }
                 }
@@ -418,14 +417,14 @@ namespace ClamAVLibrary
                 {
                     Setting setting = (Setting)configuration;
                     _settings.Add(setting);
-                    log.Info("Update setting:" + setting.Key + "=" + setting);
+                    log.Info("Update setting:" + setting.Key + "=" + setting.Value.ToString());
                     add = true;
                 }
                 else
                 {
                     Option option = (Option)configuration;
                     _options.Add(option);
-                    log.Info("Update setting:" + option.Key + "=" + option);
+                    log.Info("Update setting:" + option.Key + "=" + option.Value.ToString());
                     add = true;
                 }
             }
@@ -660,6 +659,39 @@ namespace ClamAVLibrary
         }
 
         /// <summary>
+        /// Pause Monitoring Loop
+        /// </summary>
+        public void Pause()
+        {
+            log.Debug("In Pause()");
+            log.Info("[" + _id + "] pause");
+
+            if (_downloading == true)
+            {
+                if (proc != null)
+                {
+                    log.Debug("Kill running process (" + proc.Id + ")");
+                    // Terminate the running process
+                    proc.Kill();
+                }
+            }
+            log.Debug("Out Pause()");
+        }
+
+        /// <summary>
+        /// Resume Monitoring Loop
+        /// </summary>
+        public void Resume()
+        {
+            log.Debug("In Resume()");
+            log.Info("[" + _id + "] pause");
+
+            _signal.Set();
+
+            log.Debug("Out Resume()");
+        }
+
+        /// <summary>
         /// Start watching.
         /// </summary>
         public void Start()
@@ -674,6 +706,7 @@ namespace ClamAVLibrary
             {
                 if (!IsWatching)
                 {
+                    _signal.Set();
                     _eventTerminate.Reset();
                     _thread = new Thread(new ThreadStart(MonitorThread))
                     {
@@ -696,9 +729,10 @@ namespace ClamAVLibrary
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
 
-            if (signal != null)
+            if (_signal != null)
             {
-                signal.Set();   // force out of the waitOne
+                _running = false;   // Force out of the monitoring loop
+                _signal.Set();       // force out of the waitOne
                 if (_downloading == true)
                 {
                     if (proc != null)
@@ -709,7 +743,6 @@ namespace ClamAVLibrary
                     }
                 }
             }
-            _running = false;
 
             lock (_threadLock)
             {
@@ -760,7 +793,7 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim().Length > 0)
                 {
-                    log.Debug("[" + _id + "] output =" + outputData.Data);
+                    log.Debug("[" + _id + "] output=" + outputData.Data);
                 }
             }
         }
@@ -776,7 +809,7 @@ namespace ClamAVLibrary
             }
         }
 
-        
+
 
         #endregion
         #region Private
@@ -790,31 +823,39 @@ namespace ClamAVLibrary
 
             log.Info("[" + Id + "] monitoring");
 
-            try
+            _running = true;
+            do
             {
-                if (_background == true)
+                _signal.WaitOne();
+                try
                 {
-                    Launch();
-                }
-                else
-                {
-                    try
+                    if (_background == true)
                     {
-                        _schedule.ScheduleReceived += new EventHandler<ScheduleEventArgs>(OnTimeoutReceived);
-                        _schedule.Start();
+                        Launch();
                     }
-                    catch (Exception e)
+                    else
                     {
-                        log.Debug(e.ToString());
-                    }
+                        try
+                        {
+                            _schedule.ScheduleReceived += new EventHandler<ScheduleEventArgs>(OnTimeoutReceived);
+                            _schedule.Start();
+                        }
+                        catch (Exception e)
+                        {
+                            log.Debug(e.ToString());
+                        }
 
-                    //Loop();
+                        //Loop();
+                    }
+                }
+                catch (Exception e)
+                {
+                    log.Fatal(e.ToString());
                 }
             }
-            catch (Exception e)
-            {
-                log.Fatal(e.ToString());
-            }
+            while (_running == true);
+
+
             _thread = null;
 
             log.Debug("Out MonitorThread()");
@@ -885,7 +926,7 @@ namespace ClamAVLibrary
 
             ProcessStartInfo startInfo = new ProcessStartInfo();
 
-            startInfo.FileName = _execute;   // Assume that clamAV is installed in the same location
+            startInfo.FileName = _executePath;
             startInfo.Arguments = BuildOptions();
             startInfo.CreateNoWindow = false;
             startInfo.UseShellExecute = false;
@@ -902,7 +943,7 @@ namespace ClamAVLibrary
             try
             {
                 proc.Start();
-                log.Info("[" + _id + "] start " + _execute + startInfo.Arguments);
+                log.Info("[" + _id + "] start " + _executePath + startInfo.Arguments);
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
@@ -915,6 +956,7 @@ namespace ClamAVLibrary
 
             proc.Dispose();
             proc = null;
+
             _downloading = false;
 
             log.Debug("Out Launch()");
@@ -962,21 +1004,49 @@ namespace ClamAVLibrary
             return (seconds);
         }
 
-        private static IPAddress GetInterfaceAddress(string cidr)
+        private static IPAddress GetInterfaceAddress(string @interface)
+        {
+            return (GetInterfaceAddress(@interface, 0));
+        }
+
+        private static long Reverse(int bits)
+        {
+            long t;
+            byte[] b = new byte[4];
+            for (int i = 0; i < 3; i++)
+            {
+                if (bits >= 8)
+                {
+                    b[i] = 255;
+                    bits = bits - 8;
+                }
+                else
+                {
+                    b[i] = 0;
+                }
+            }
+            t = BitConverter.ToInt32(b, 0);
+
+            return (t);
+        }
+
+        private static IPAddress GetInterfaceAddress(string cidr, int bits)
         {
             log.Debug("In GetInterfaceAddress()");
             IPAddress ip = IPAddress.Parse("127.0.0.1");
-            int mask = 32;
             long subnet = 0;
+            if (bits == 0)
+            {
+                bits = 24;
+            }
 
             try
             {
                 if (cidr.Contains("/"))
                 {
-                    mask = Convert.ToInt32(cidr.Substring(cidr.IndexOf('/') + 1));
+                    bits = Convert.ToInt32(cidr.Substring(cidr.IndexOf('/') + 1));
                     ip = IPAddress.Parse(cidr.Substring(0, cidr.IndexOf('/')));
                     subnet = BitConverter.ToInt32(ip.GetAddressBytes(), 0);
-                    ip = IPAddress.Parse("127.0.0.1");
                 }
                 else
                 {
@@ -985,7 +1055,7 @@ namespace ClamAVLibrary
                 }
             }
             catch { };
-
+            long mask = Reverse(bits);
             foreach (NetworkInterface networkInterface in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (ip.ToString() == "127.0.0.1")
@@ -998,12 +1068,14 @@ namespace ClamAVLibrary
                     {
                         foreach (UnicastIPAddressInformation addressInformation in networkInterface.GetIPProperties().UnicastAddresses)
                         {
+                            log.Debug("Check " + addressInformation.Address);
                             if (addressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
                             {
                                 long ipAddress = BitConverter.ToInt32(addressInformation.Address.GetAddressBytes(), 0);
                                 if ((subnet & mask) == (ipAddress & mask))
                                 {
                                     ip = addressInformation.Address;
+                                    log.Debug("ip=" + ip);
                                     break;
                                 }
                             }

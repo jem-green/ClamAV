@@ -1,34 +1,30 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Net;
 using System.Net.Sockets;
-using log4net;
 
 namespace ClamAVLibrary
 {
-    public class Forwarder
+    public class Forwarder : Element
     {
         #region Variables
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
-        private string id = "";
-        ForwarderType type = ForwarderType.SYSLOG;
-        string key = "";
-        string username = "";
-        string password = "";
-        int port = 0;
+        ForwarderType _type = ForwarderType.Corral;
+        string _key = "";
+        string _username = "";
+        string _password = "";
+        int _port = 0;
         string _host = "";
         IPAddress _hostIp = IPAddress.Parse("127.0.0.1");        // default to loopback
-        string from = "";
-        string to = "";
-        string encrypt = "";
-        Message.FacilityType facility = Message.FacilityType.Kernel;
-        Message.SeverityType severity = Message.SeverityType.Alert;
-        INotify notifier = null;
+        string _from = "";
+        string _to = "";
+        string _encrypt = "";
+        Message.FacilityType _facility = Message.FacilityType.Kernel;
+        Message.SeverityType _severity = Message.SeverityType.Alert;
+        INotify _notifier = null;
         List<NameKey> _keys = null;
-        
         public enum ForwarderType
         {
             Corral = 0,
@@ -43,7 +39,6 @@ namespace ClamAVLibrary
 
         #endregion
         #region Constructor
-
         public Forwarder()
         {
             log.Debug("In Forwarder()");
@@ -58,11 +53,11 @@ namespace ClamAVLibrary
         {
             get
             {
-                return (encrypt);
+                return (_encrypt);
             }
             set
             {
-                encrypt = value;
+                _encrypt = value;
             }
         }
 
@@ -70,11 +65,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                from = value;
+                _from = value;
             }
             get
             {
-                return (from);
+                return (_from);
             }
         }
 
@@ -82,11 +77,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                facility = value;
+                _facility = value;
             }
             get
             {
-                return (facility);
+                return (_facility);
             }
         }
 
@@ -103,29 +98,18 @@ namespace ClamAVLibrary
             }
         }
 
-        public string Id
-        {
-            set
-            {
-                id = value;
-            }
-            get
-            {
-                return (id);
-            }
-        }
-
         public string Key
         {
             set
             {
-                key = value;
+                _key = value;
             }
             get
             {
-                return (key);
+                return (_key);
             }
         }
+
         public List<NameKey> Keys
         {
             set
@@ -142,11 +126,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                notifier = value;
+                _notifier = value;
             }
             get
             {
-                return (notifier);
+                return (_notifier);
             }
         }
 
@@ -154,11 +138,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                password = value;
+                _password = value;
             }
             get
             {
-                return (password);
+                return (_password);
             }
         }
 
@@ -166,11 +150,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                port = value;
+                _port = value;
             }
             get
             {
-                return (port);
+                return (_port);
             }
         }
 
@@ -178,11 +162,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                severity = value;
+                _severity = value;
             }
             get
             {
-                return (severity);
+                return (_severity);
             }
         }
 
@@ -190,11 +174,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                to = value;
+                _to = value;
             }
             get
             {
-                return (to);
+                return (_to);
             }
         }
 
@@ -202,11 +186,11 @@ namespace ClamAVLibrary
         {
             set
             {
-                type = value;
+                _type = value;
             }
             get
             {
-                return (type);
+                return (_type);
             }
         }
 
@@ -214,16 +198,17 @@ namespace ClamAVLibrary
         {
             set
             {
-                username = value;
+                _username = value;
             }
             get
             {
-                return (username);
+                return (_username);
             }
         }
 
         #endregion
         #region Methods
+
         public static ForwarderType ForwarderLookup(string forwarderName)
         {
             ForwarderType forwarderType = ForwarderType.Corral;
@@ -293,17 +278,20 @@ namespace ClamAVLibrary
             return (forwarderType);
         }
 
-        public void Execute(Message message)
+        public bool Execute(Message message)
         {
             log.Debug("In Execute");
             // need to translate beween syslog and other messaging
             // do we let the notifyer determine this.
-            log.Info("Notify " + id);
-            notifier.Notify(message.HostName, message.Tag, message.Content);
+            log.Debug("Notify " + _id);
+            _notifier.Notify(message.HostName, message.Tag, message.Content);
             log.Debug("Out Execute");
+            return (true);
         }
+
         #endregion
         #region Private
+
         private static IPAddress GetIPAddress(string host)
         {
             log.Debug("In GetIPAddress");
@@ -330,6 +318,7 @@ namespace ClamAVLibrary
             log.Debug("Out GetIPAddress");
             return (ip);
         }
+
         #endregion
     }
 }

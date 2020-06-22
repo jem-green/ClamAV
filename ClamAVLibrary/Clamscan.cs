@@ -1,10 +1,8 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Threading;
-using log4net;
 
 namespace ClamAVLibrary
 {
@@ -20,7 +18,7 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public ClamScan(string id) : this(id, DataLocation.program, "")
+        public ClamScan(string id) : this(id, DataLocation.Program, "")
         {
         }
 
@@ -34,14 +32,14 @@ namespace ClamAVLibrary
 
             _id = id;
             _execute = "clamscan.exe";
-			if (path.Length>0)
-			{
-            	_path = path;
-			}
-			else
-			{
-				_path = ".";
-			}
+            if (path.Length > 0)
+            {
+                _path = path;
+            }
+            else
+            {
+                _path = ".";
+            }
 
             _schedule = new Schedule();
             _schedule.Date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
@@ -49,7 +47,7 @@ namespace ClamAVLibrary
 
             switch (location)
             {
-                case DataLocation.app:
+                case DataLocation.App:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -58,14 +56,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case DataLocation.program:
+                case DataLocation.Program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case DataLocation.local:
+                case DataLocation.Local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -74,7 +72,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case DataLocation.roaming:
+                case DataLocation.Roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -96,6 +94,7 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamscan.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamscan.conf";
+            _executePath = basePath + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
             //_settings.Add(new Setting("AlgorithmicDetection", null));
@@ -211,10 +210,10 @@ namespace ClamAVLibrary
             _options.Add(new Option("help"));
             _options.Add(new Option("version"));
             _options.Add(new Option("verbose"));
-            _options.Add(new Option("database",_databasePath, Option.ConfigFormat.text));
+            _options.Add(new Option("database", _databasePath, Option.ConfigFormat.text));
             _options.Add(new Option("log", _logFilenamePath, Option.ConfigFormat.text));
             _options.Add(new Option("recursive", "", Option.ConfigFormat.key));
-            _options.Add(new Option("infected","", Option.ConfigFormat.key));
+            _options.Add(new Option("infected", "", Option.ConfigFormat.key));
 
             //  --exclude="[^\]*\.dbx$" --exclude="[^\]*\.tbb$" --exclude="[^\]*\.pst$" --exclude="[^\]*\.dat$" --exclude="[^\]*\.log$" --exclude="[^\]*\.chm$" -i C:\
 
@@ -323,7 +322,7 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
         {
             if ((outputData != null) && (outputData.Data != null))
             {
-                if (outputData.Data.Trim() != "")
+                if (outputData.Data.Trim().Length > 0)
                 {
                     string data = outputData.Data;
                     if (data.ToUpper().LastIndexOf("FOUND") > 0)
@@ -347,7 +346,7 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
         {
             if ((errorData != null) && (errorData.Data != null))
             {
-                if (errorData.Data.Trim() != "")
+                if (errorData.Data.Trim().Length > 0)
                 {
                     string data = errorData.Data;
                     if (data.Substring(0, 9).ToUpper() == "WARNING: ")

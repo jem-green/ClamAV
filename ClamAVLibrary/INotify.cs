@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ClamAVLibrary
+﻿namespace ClamAVLibrary
 {
     public interface INotify
     {
-   
+
         int Priority
         {
             set;

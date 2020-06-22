@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>ClamAVLibrary</RootNamespace>
     <AssemblyName>ClamAVLibrary</AssemblyName>
-    <TargetFrameworkVersion>v2.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -21,7 +21,8 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x86</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,6 +31,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="log4net">
@@ -41,11 +43,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="UpdateClam.cs" />
     <Compile Include="Component.cs" />
-    <Compile Include="Beat.cs" />
     <Compile Include="Clamd.cs" />
     <Compile Include="ClamdScan.cs" />
-    <Compile Include="Clamscan.cs" />
+    <Compile Include="ClamScan.cs" />
+    <Compile Include="Element.cs" />
     <Compile Include="Event.cs" />
     <Compile Include="Forwarder.cs" />
     <Compile Include="ClamAV.cs" />
@@ -61,7 +64,7 @@
     <Compile Include="Schedule.cs" />
     <Compile Include="Serialise.cs" />
     <Compile Include="ScheduleEventArgs.cs" />
-    <Compile Include="SocketEventArgs.cs" />
+    <Compile Include="NotificationEventArgs.cs" />
     <Compile Include="SysLog.cs" />
   </ItemGroup>
   <ItemGroup>

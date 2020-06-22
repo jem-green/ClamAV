@@ -1,6 +1,5 @@
 ﻿using log4net;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 
@@ -12,37 +11,39 @@ namespace ClamAVLibrary
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        AutoResetEvent _monitorSignal;
+        AutoResetEvent _monitorSignal = new AutoResetEvent(false);
         Queue<Event> _messageQueue;
         private object _threadLock = new object();
         private Thread _monitoringThread;
 
         private bool _disposed = false;
         private ManualResetEvent monitorEventTerminate = new ManualResetEvent(false);
-        bool _monitorRunning = true;	
+        bool _monitorRunning = true;
         private int monitorInterval = 60000;
-		
-        private Component.DataLocation _location = Component.DataLocation.app;
+
+        private Component.DataLocation _location = Component.DataLocation.App;
 
         private Clamd _server;
-        private FreshClam _update;
+        private FreshClam _refresh;
         private List<Component> _scans;
+        private UpdateClam _update;
         Dictionary<string, Forwarder> _forwarders = null;
-        Component.OperatingMode _mode = Component.OperatingMode.combined;
+        Component.OperatingMode _mode = Component.OperatingMode.Combined;
 
         #endregion
         #region Constructors
-		
-		public ClamAV()
+
+        public ClamAV()
         {
             log.Debug("in ClamAV()");
-            _update = new FreshClam();
-        	_scans = new List<Component>();
-			_messageQueue = new Queue<Event>();
+            //_refresh = new FreshClam();
+            //_update = new UpdateClam();
+            _scans = new List<Component>();
+            _messageQueue = new Queue<Event>();
             _forwarders = new Dictionary<string, Forwarder>();
             log.Debug("Out ClamAV()");
-        }	
-		
+        }
+
         #endregion
         #region Properties
 
@@ -94,7 +95,19 @@ namespace ClamAVLibrary
             }
         }
 
-        public FreshClam Update
+        public FreshClam Refresh
+        {
+            get
+            {
+                return (_refresh);
+            }
+            set
+            {
+                _refresh = value;
+            }
+        }
+
+        public UpdateClam Update
         {
             get
             {
@@ -135,13 +148,13 @@ namespace ClamAVLibrary
             log.Debug("In Monitor()");
 
             // Launch the scanners and updators
-            // Server = clamd + freshclam
-            // Combined = freshclam + clamscan
-            // Client = clamdscan
+            // Server = clamd + freshclam + updateclam
+            // Combined = clamscan + freshclam + updateclam
+            // Client = clamdscan + updateclam????
 
             // Run clamd
 
-            if (_mode == Component.OperatingMode.server)
+            if (_mode == Component.OperatingMode.Server)
             {
                 if (_server != null)
                 {
@@ -154,16 +167,31 @@ namespace ClamAVLibrary
 
             // Run freshclam
 
-            if ((_mode == Component.OperatingMode.combined) || (_mode == Component.OperatingMode.server))
+            if ((_mode == Component.OperatingMode.Combined) || (_mode == Component.OperatingMode.Server))
             {
-                _update.WriteConfig();
-                _update.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
-                _update.Start();
+                if (_refresh != null)
+                {
+                    _refresh.WriteConfig();
+                    _refresh.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _refresh.Start();
+                }
             }
 
-            // run clamdscan or clamscan depending on mode
+            // Run updateclam
 
-            if ((_mode == Component.OperatingMode.combined) || (_mode == Component.OperatingMode.client))
+            if ((_mode == Component.OperatingMode.Combined) || (_mode == Component.OperatingMode.Server))
+            {
+                if (_update != null)
+                {
+                    _update.WriteConfig();
+                    _update.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _update.Start();
+                }
+            }
+
+            // Run clamdscan or clamscan depending on mode
+
+            if ((_mode == Component.OperatingMode.Combined) || (_mode == Component.OperatingMode.Client))
             {
                 foreach (Component scan in _scans)
                 {
@@ -197,6 +225,7 @@ namespace ClamAVLibrary
 
             log.Debug("Out Monitor()");
         }
+
         /// <summary>
         /// 
         /// </summary>
@@ -224,7 +253,7 @@ namespace ClamAVLibrary
                         IsBackground = true
                     };
                     _monitoringThread.Start();
-                    Event notification = new Event("ClamAV","ClamAV", "Started",Event.EventLevel.Emergency);
+                    Event notification = new Event("ClamAV", "ClamAV", "Started", Event.EventLevel.Emergency);
                     _messageQueue.Enqueue(notification);
                     Thread.Sleep(1000);         // Wait for the monitoring loop to start
                     _monitorSignal.Set();       // force out of the waitOne
@@ -280,7 +309,7 @@ namespace ClamAVLibrary
                 {
                     Stop();
                     _server.Dispose();
-                    _update.Dispose();
+                    _refresh.Dispose();
                     foreach (Component component in _scans)
                     {
                         component.Dispose();
@@ -293,7 +322,7 @@ namespace ClamAVLibrary
 
         public static Component.OperatingMode ModeLookup(string modeName)
         {
-            Component.OperatingMode mode = Component.OperatingMode.combined;
+            Component.OperatingMode mode = Component.OperatingMode.Combined;
 
             if (Int32.TryParse(modeName, out int modeValue))
             {
@@ -312,19 +341,19 @@ namespace ClamAVLibrary
                     case "C":
                     case "CLIENT":
                         {
-                            mode = Component.OperatingMode.client;
+                            mode = Component.OperatingMode.Client;
                             break;
                         }
                     case "L":
                     case "COMBINED":
                         {
-                            mode = Component.OperatingMode.combined;
+                            mode = Component.OperatingMode.Combined;
                             break;
                         }
                     case "S":
                     case "SERVER":
                         {
-                            mode = Component.OperatingMode.server;
+                            mode = Component.OperatingMode.Server;
                             break;
                         }
                 }
@@ -334,8 +363,8 @@ namespace ClamAVLibrary
 
         public static Component.DataLocation LocationLookup(string locationName)
         {
-            Component.DataLocation dataLocation = Component.DataLocation.program;
-            
+            Component.DataLocation dataLocation = Component.DataLocation.Program;
+
             if (Int32.TryParse(locationName, out int locationValue))
             {
                 dataLocation = (Component.DataLocation)locationValue;
@@ -355,28 +384,28 @@ namespace ClamAVLibrary
                     case "APPLICATION":
                     case "PROGRAMEDATA":
                         {
-                            dataLocation = Component.DataLocation.app;
+                            dataLocation = Component.DataLocation.App;
                             break;
                         }
                     case "L":
                     case "LOCAL":
                     case "LOCALAPPLICATIONDATA":
                         {
-                            dataLocation = Component.DataLocation.local;
+                            dataLocation = Component.DataLocation.Local;
                             break;
                         }
                     case "P":
                     case "PROGRAM":
                     case "PROGRAMFOLDER":
                         {
-                            dataLocation = Component.DataLocation.program;
+                            dataLocation = Component.DataLocation.Program;
                             break;
                         }
                     case "R":
                     case "ROAMING":
                     case "APPLICATIONDATA":
                         {
-                            dataLocation = Component.DataLocation.roaming;
+                            dataLocation = Component.DataLocation.Roaming;
                             break;
                         }
 
@@ -384,8 +413,6 @@ namespace ClamAVLibrary
             }
             return (dataLocation);
         }
-
-
 
         #endregion
         #region Private
@@ -413,7 +440,6 @@ namespace ClamAVLibrary
 
             // Monitor messages received from the scanner or updater
 
-            _monitorSignal = new AutoResetEvent(false);
             _monitorRunning = true;
             do
             {
@@ -423,68 +449,86 @@ namespace ClamAVLibrary
                 {
                     Event clamEvent = _messageQueue.Peek();
 
-                    foreach (KeyValuePair<string, Forwarder> entry in _forwarders)
+                    if (clamEvent.Type == Event.EventType.Pause)
                     {
-                        Forwarder forwarder = entry.Value;
-                        try
+                        // If running in server or combined mode then need to stop clamd
+                        if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined))
                         {
-                            // Need to translate events to notifications
-                            Notify.PriorityOrder priority = Notify.PriorityOrder.normal;
-                            switch (clamEvent.Level)
-                            {
-                                case Event.EventLevel.Information:
-                                    {
-                                        priority = Notify.PriorityOrder.low;
-                                        break;
-                                    }
-                                case Event.EventLevel.Notification:
-                                    {
-                                        priority = Notify.PriorityOrder.moderate;
-                                        break;
-                                    }
-                                case Event.EventLevel.Warning:
-                                    {
-                                        priority = Notify.PriorityOrder.moderate;
-                                        break;
-                                    }
-                                case Event.EventLevel.Error:
-                                    {
-                                        priority = Notify.PriorityOrder.normal;
-                                        break;
-                                    }
-                                case Event.EventLevel.Critical:
-                                    {
-                                        priority = Notify.PriorityOrder.high;
-                                        break;
-                                    }
-                                case Event.EventLevel.Alert:
-                                    {
-                                        priority = Notify.PriorityOrder.high;
-                                        break;
-                                    }
-                                case Event.EventLevel.Emergency:
-                                    {
-                                        priority = Notify.PriorityOrder.emergency;
-                                        break;
-                                    }
-                            }
-
-                            int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description, priority);
-                            if (error > 0)
-                            {
-                                log.Error("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
-                            }
-                            else
-                            {
-                                log.Info("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            log.Debug(e.ToString());
+                            _server.Pause();
                         }
                     }
-                        
+                    if (clamEvent.Type == Event.EventType.Resume)
+                    {
+                        // If running in server or combined mode then need to start clamd 
+                        if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined))
+                        {
+                            _server.Resume();
+                        }
+                    }
+                    else if (clamEvent.Type == Event.EventType.Notification)
+                    {
+                        foreach (KeyValuePair<string, Forwarder> entry in _forwarders)
+                        {
+                            Forwarder forwarder = entry.Value;
+                            try
+                            {
+                                // Need to translate events to notifications
+                                Notify.PriorityOrder priority = Notify.PriorityOrder.Normal;
+                                switch (clamEvent.Level)
+                                {
+                                    case Event.EventLevel.Information:
+                                        {
+                                            priority = Notify.PriorityOrder.Low;
+                                            break;
+                                        }
+                                    case Event.EventLevel.Notification:
+                                        {
+                                            priority = Notify.PriorityOrder.Moderate;
+                                            break;
+                                        }
+                                    case Event.EventLevel.Warning:
+                                        {
+                                            priority = Notify.PriorityOrder.Moderate;
+                                            break;
+                                        }
+                                    case Event.EventLevel.Error:
+                                        {
+                                            priority = Notify.PriorityOrder.Normal;
+                                            break;
+                                        }
+                                    case Event.EventLevel.Critical:
+                                        {
+                                            priority = Notify.PriorityOrder.High;
+                                            break;
+                                        }
+                                    case Event.EventLevel.Alert:
+                                        {
+                                            priority = Notify.PriorityOrder.High;
+                                            break;
+                                        }
+                                    case Event.EventLevel.Emergency:
+                                        {
+                                            priority = Notify.PriorityOrder.Emergency;
+                                            break;
+                                        }
+                                }
+
+                                int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description, priority);
+                                if (error > 0)
+                                {
+                                    log.Error("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
+                                }
+                                else
+                                {
+                                    log.Debug("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                log.Debug(e.ToString());
+                            }
+                        }
+                    }
                     _messageQueue.Dequeue();
                 }
                 log.Debug("Processed queue");

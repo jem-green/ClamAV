@@ -1,13 +1,24 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.106
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClamAVService", "ClamAVService\ClamAVService.csproj", "{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClamAVService", "ClamAVService\ClamAVService.csproj", "{54052FB7-B688-4D5C-9D1A-925F73629016}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClamAVLibrary", "ClamAVLibrary\ClamAVLibrary.csproj", "{A0281C25-460F-4ADE-8078-F00EFA85B041}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClamAVConsole", "ClamAVConsole\ClamAVConsole.csproj", "{38516B8C-E967-4602-9E9F-D8DCF083F4C4}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "ClamAVSetup", "ClamAVSetup\ClamAVSetup.vdproj", "{946E0770-AB0A-4623-9669-BA9E18BB67C0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdParty", "ThirdParty", "{132F8D89-1533-4FFD-A167-169347B53B46}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "log4net", "log4net", "{53667249-B00E-4731-9879-2F3EEEA0E0C4}"
+	ProjectSection(SolutionItems) = preProject
+		ThirdParty\log4net\log4net.dll = ThirdParty\log4net\log4net.dll
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updateclam", "UpdateClam\updateclam.csproj", "{642D5505-E326-4CD8-B3E1-1CB8792FB4AD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,10 +26,10 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{33CC1AFF-5DDA-4416-A1AD-80DF1D907C75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{54052FB7-B688-4D5C-9D1A-925F73629016}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54052FB7-B688-4D5C-9D1A-925F73629016}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54052FB7-B688-4D5C-9D1A-925F73629016}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54052FB7-B688-4D5C-9D1A-925F73629016}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A0281C25-460F-4ADE-8078-F00EFA85B041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A0281C25-460F-4ADE-8078-F00EFA85B041}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A0281C25-460F-4ADE-8078-F00EFA85B041}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -27,9 +38,18 @@ Global
 		{38516B8C-E967-4602-9E9F-D8DCF083F4C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{38516B8C-E967-4602-9E9F-D8DCF083F4C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{38516B8C-E967-4602-9E9F-D8DCF083F4C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{946E0770-AB0A-4623-9669-BA9E18BB67C0}.Debug|Any CPU.ActiveCfg = Debug
+		{946E0770-AB0A-4623-9669-BA9E18BB67C0}.Release|Any CPU.ActiveCfg = Release
+		{642D5505-E326-4CD8-B3E1-1CB8792FB4AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{642D5505-E326-4CD8-B3E1-1CB8792FB4AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{642D5505-E326-4CD8-B3E1-1CB8792FB4AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{642D5505-E326-4CD8-B3E1-1CB8792FB4AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{53667249-B00E-4731-9879-2F3EEEA0E0C4} = {132F8D89-1533-4FFD-A167-169347B53B46}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5C087726-9F88-4707-BFAD-966BA323036D}

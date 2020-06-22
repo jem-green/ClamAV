@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ClamAVLibrary
+﻿namespace ClamAVLibrary
 {
     public class NameKey
     {
@@ -19,9 +15,9 @@ namespace ClamAVLibrary
             _name = "";
             _key = "";
         }
-    
 
-        public NameKey (string name, string key)
+
+        public NameKey(string name, string key)
         {
             _name = name;
             _key = key;

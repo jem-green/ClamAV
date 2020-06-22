@@ -1,13 +1,14 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Threading;
-using log4net;
 
 namespace ClamAVLibrary
 {
+    /// <summary>
+    /// Wrapper class to manage and launch freshclam
+    /// </summary>
     public class FreshClam : Component
     {
         #region Variables
@@ -17,11 +18,11 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public FreshClam() : this("", DataLocation.program)
+        public FreshClam() : this("", DataLocation.Program)
         {
         }
 
-        public FreshClam(string id) : this(id, DataLocation.program)
+        public FreshClam(string id) : this(id, DataLocation.Program)
         {
         }
 
@@ -39,7 +40,7 @@ namespace ClamAVLibrary
 
             switch (location)
             {
-                case DataLocation.app:
+                case DataLocation.App:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -48,14 +49,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case DataLocation.program:
+                case DataLocation.Program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case DataLocation.local:
+                case DataLocation.Local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -64,7 +65,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case DataLocation.roaming:
+                case DataLocation.Roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -86,6 +87,10 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "freshclam.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "freshclam.conf";
+
+            // Not sure about the hardcoding here
+
+            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
             _settings.Add(new Setting("AllowSupplementaryGroups"));

@@ -1,10 +1,9 @@
-﻿using System.Net;
+﻿using log4net;
 using System.Net.Sockets;
-using log4net;
 
 namespace ClamAVLibrary
 {
-    public class SysLog: Notify, INotify
+    public class SysLog : Notify, INotify
     {
         #region Variables
 
@@ -13,12 +12,12 @@ namespace ClamAVLibrary
         private string _host = "";                                           // the name to message
         Message.FacilityType _facility = Message.FacilityType.Kernel;        //
         Message.SeverityType _severity = Message.SeverityType.Emergency;     //
-        PriorityOrder priority = PriorityOrder.normal;                      // The notification priority     
+        PriorityOrder _priority = PriorityOrder.Normal;                      // The notification priority     
 
         public enum ProtocolFormat : int
         {
-            rfc3164 = 0,
-            rfc5424 = 1
+            Rfc3164 = 0,
+            Rfc5424 = 1
         }
 
         public enum ErrorCode : int
@@ -69,10 +68,10 @@ namespace ClamAVLibrary
             }
             set
             {
-				if (value.Length > 0)
+                if (value.Length > 0)
                 {
-                _host = value;
-				}
+                    _host = value;
+                }
             }
         }
 
@@ -84,10 +83,10 @@ namespace ClamAVLibrary
             }
             set
             {
-				if (_port != 0)
+                if (_port != 0)
                 {
-                	_port = value;
-				}
+                    _port = value;
+                }
             }
         }
 
@@ -95,11 +94,11 @@ namespace ClamAVLibrary
         {
             get
             {
-                return ((int)priority);
+                return ((int)_priority);
             }
             set
             {
-                priority = PriorityLookup(value.ToString());
+                _priority = PriorityLookup(value.ToString());
             }
         }
 
@@ -120,8 +119,8 @@ namespace ClamAVLibrary
 
         public int Notify(string applicationName, string eventName, string description)
         {
-            return (Notify(applicationName, eventName, description, PriorityOrder.normal));
-        }	
+            return (Notify(applicationName, eventName, description, PriorityOrder.Normal));
+        }
 
         /// <summary>
         /// Send out the notifiction
@@ -129,6 +128,13 @@ namespace ClamAVLibrary
         /// <returns></returns>
         public int Notify(string applicationName, string eventName, string description, PriorityOrder priority)
         {
+            log.Debug("In Notify");
+
+            log.Info("Send SysLog Message");
+            log.Debug("ApplicationName=" + applicationName);
+            log.Debug("EventName=" + eventName);
+            log.Debug("Description=" + description);
+            log.Debug("Priority=" + priority);
             ErrorCode error = ErrorCode.None;
 
             // Translate priority into severyity
@@ -136,27 +142,27 @@ namespace ClamAVLibrary
             Message.SeverityType severity = Message.SeverityType.Null;
             switch (priority)
             {
-                case PriorityOrder.low:
+                case PriorityOrder.Low:
                     {
                         severity = Message.SeverityType.Info;
                         break;
                     }
-                case PriorityOrder.moderate:
+                case PriorityOrder.Moderate:
                     {
                         severity = Message.SeverityType.Notice;
                         break;
                     }
-                case PriorityOrder.normal:
+                case PriorityOrder.Normal:
                     {
                         severity = Message.SeverityType.Warning;
                         break;
                     }
-                case PriorityOrder.high:
+                case PriorityOrder.High:
                     {
                         severity = Message.SeverityType.Alert;
                         break;
                     }
-                case PriorityOrder.emergency:
+                case PriorityOrder.Emergency:
                     {
                         severity = Message.SeverityType.Emergency;
                         break;
@@ -167,11 +173,10 @@ namespace ClamAVLibrary
 
             Rfc3164 message = new Rfc3164
             {
-                Severity = severity,
+                Severity = _severity,
                 Facility = _facility,
                 HostName = System.Environment.MachineName.ToUpper()
             };
-
             message.Tag = string.Format("{0}[{1}]", eventName, applicationName);
             message.Content = description;
             try
@@ -190,11 +195,18 @@ namespace ClamAVLibrary
                     {
                         error = ErrorCode.General;
                     }
-					else
-					{
-                        log.Debug("Sent -> " + message);
+                    else
+                    {
+                        if (severity == Message.SeverityType.Emergency)
+                        {
+                            log.Warn("Sent -> " + message);
+                        }
+                        else
+                        {
+                            log.Error("Sent -> " + message);
+                        }
                         error = ErrorCode.None;
-					}
+                    }
                 }
             }
             catch (SocketException e)
@@ -202,6 +214,7 @@ namespace ClamAVLibrary
                 log.Error(e.ToString());
                 error = ErrorCode.General;
             }
+            log.Debug("Out Notify");
             return ((int)error);
         }
 
@@ -231,7 +244,7 @@ namespace ClamAVLibrary
 
         private static string ErrorDescription(ErrorCode errorCode)
         {
-            string errorDescripton = "";
+            string errorDescripton;
             switch (errorCode)
             {
                 case ErrorCode.None:
@@ -254,4 +267,3 @@ namespace ClamAVLibrary
         #endregion
     }
 }
- 

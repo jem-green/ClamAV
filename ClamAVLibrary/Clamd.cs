@@ -1,10 +1,8 @@
-﻿using System;
+﻿using log4net;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text;
-using System.Threading;
-using log4net;
 
 namespace ClamAVLibrary
 {
@@ -20,7 +18,7 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public Clamd() : this(DataLocation.program, 0)
+        public Clamd() : this(DataLocation.Program, 0)
         {
         }
 
@@ -30,8 +28,8 @@ namespace ClamAVLibrary
 
         public Clamd(DataLocation location, int port)
         {
-			log.Debug("In Clamd()");
-			_execute = "clamd.exe";
+            log.Debug("In Clamd()");
+            _execute = "clamd.exe";
             if (port != 0)
             {
                 this._port = port;
@@ -40,7 +38,7 @@ namespace ClamAVLibrary
 
             switch (location)
             {
-                case Component.DataLocation.app:
+                case Component.DataLocation.App:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -49,14 +47,14 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Component.DataLocation.program:
+                case Component.DataLocation.Program:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
                         basePath = basePath.Substring(0, pos);
                         break;
                     }
-                case Component.DataLocation.local:
+                case Component.DataLocation.Local:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -65,7 +63,7 @@ namespace ClamAVLibrary
                         }
                         break;
                     }
-                case Component.DataLocation.roaming:
+                case Component.DataLocation.Roaming:
                     {
                         basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
                         if (!Directory.Exists(basePath))
@@ -87,6 +85,10 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamd.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamd.conf";
+
+            // Not sure about the hardcoding here
+
+            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
             _settings.Add(new Setting("AlgorithmicDetection", null));
@@ -190,8 +192,8 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("StructuredMinSSNCount", null));
             _settings.Add(new Setting("StructuredSSNFormatNormal", null));
             _settings.Add(new Setting("StructuredSSNFormatStripped", null));
-            _settings.Add(new Setting("TCPAddr", _ipAddress,Setting.ConfigFormat.text));
-            _settings.Add(new Setting("TCPSocket", _port,Setting.ConfigFormat.value));
+            _settings.Add(new Setting("TCPAddr", _ipAddress, Setting.ConfigFormat.text));
+            _settings.Add(new Setting("TCPSocket", _port, Setting.ConfigFormat.value));
             _settings.Add(new Setting("TemporaryDirectory", null));
             _settings.Add(new Setting("User", null));
             _settings.Add(new Setting("VirusEvent", null));
@@ -201,8 +203,8 @@ namespace ClamAVLibrary
             _options = new List<Option>();
             _options.Add(new Option("help"));
             _options.Add(new Option("version"));
-			_options.Add(new Option("debug"));
-			_options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.text));
+            _options.Add(new Option("debug"));
+            _options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.text));
 
             log.Debug("Out Clamd()");
         }

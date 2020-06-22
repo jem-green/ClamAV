@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ClamAVLibrary
+﻿namespace ClamAVLibrary
 {
     // Forwarder base class
     public class Notify
@@ -11,11 +7,11 @@ namespace ClamAVLibrary
         // Generally there are 5 levels supported by most notfication solutions
         public enum PriorityOrder
         {
-            low = -2,
-            moderate = -1,
-            normal = 0,
-            high = 1,
-            emergency = 2
+            Low = -2,
+            Moderate = -1,
+            Normal = 0,
+            High = 1,
+            Emergency = 2
         }
         #endregion
         #region Methods
@@ -49,27 +45,27 @@ namespace ClamAVLibrary
                 case "-2":
                 case "LOW":
                 case "L":
-                    priority = PriorityOrder.low;
+                    priority = PriorityOrder.Low;
                     break;
                 case "-1":
                 case "MODERATE":
                 case "M":
-                    priority = PriorityOrder.moderate;
+                    priority = PriorityOrder.Moderate;
                     break;
                 case "0":
                 case "NORMAL":
                 case "N":
-                    priority = PriorityOrder.normal;
+                    priority = PriorityOrder.Normal;
                     break;
                 case "1":
                 case "HIGH":
                 case "H":
-                    priority = PriorityOrder.high;
+                    priority = PriorityOrder.High;
                     break;
                 case "2":
                 case "EMERGENCY":
                 case "E":
-                    priority = PriorityOrder.emergency;
+                    priority = PriorityOrder.Emergency;
                     break;
             }
             return (priority);

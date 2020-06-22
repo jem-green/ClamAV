@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Text.RegularExpressions;
-using System.Net;
 
 namespace ClamAVLibrary
 {
@@ -9,6 +8,17 @@ namespace ClamAVLibrary
         // http://www.ietf.org/rfc/rfc5424.txt
 
         #region variables
+
+        private static string _headerPattern = @"\<(?<PRIVAL>\d{1,3})\>(?<VERSION>[1-9]{0,2}) (?<TIMESTAMP>(\S|\w)+) (?<HOSTNAME>-|(\S|\w){1,255}) (?<APPNAME>-|(\S|\w){1,48}) (?<PROCID>-|(\S|\w){1,128}) (?<MSGID>-|(\S|\w){1,32})";
+        private static string _structuredDataPattern = @"(?<STRUCTUREDDATA>-|\[[^\[\=\x22\]\x20]{1,32}( ([^\[\=\x22\]\x20]{1,32}=\x22.+\x22))?\])";
+        private static string _messagePattern = @"( (?<MSG>.+))?";
+        private static Regex _Expression = new Regex($@"^{_headerPattern} {_structuredDataPattern}{_messagePattern}$", RegexOptions.None);
+
+        int _version;
+        string _procId;
+        string _messageId;
+        string _structuredData;
+
         #endregion
         #region Constructor
 
@@ -17,57 +27,15 @@ namespace ClamAVLibrary
 
         }
 
-        public Rfc5424(string message)
+        public Rfc5424(string message) : this(null, message)
         {
-            // Decode messgae
 
-            //<(?<PRI>([0-9]{1,3}))>(?<HEADER>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}\s[\-\[\]a-zA-Z0-9:.]+\s)(?<MSG>.*)
-            string test = @"<(?<PRI>([0-9]{1,3}))>(?<HEADER>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}\s[\-\[\]a-zA-Z0-9:.]+\s)(?<MSG>.*)";
-            Regex mRegex = new Regex(test, RegexOptions.Compiled);
-            Match tmpMatch = mRegex.Match(message);
-            string pri = tmpMatch.Groups["PRI"].Value;
-            string header = tmpMatch.Groups["HEADER"].Value.TrimEnd();
-            string msg = tmpMatch.Groups["MSG"].Value.TrimEnd();
-            log.Debug("pri='" + pri + "'");
-            log.Debug("header='" + header + "'");
-            log.Debug("msg='" + msg + "'");
+        }
 
-            //Decode Pri
+        public Rfc5424(string host, string message)
+        {
+            Parse(host, message);
 
-            int priority = Convert.ToInt32(pri);
-            int facility = priority >> 3;  // divide by 8 by shifting left
-            int severity = priority & 0x7; // and with 7 to mask out
-            _facility = (FacilityType)Enum.Parse(typeof(FacilityType), facility.ToString());
-            _severity = (SeverityType)Enum.Parse(typeof(SeverityType), severity.ToString());
-
-            //Decode header
-
-            int pos = header.LastIndexOf(' ');
-            if (pos > 0)
-            {
-                _timeStamp = ToDateTime(header.Substring(0, pos));
-                _hostName = header.Substring(pos + 1, header.Length - pos - 1);
-                log.Debug("timestamp='" + _timeStamp + "'");
-                log.Debug("hostname='" + _hostName + "'");
-            }
-            else
-            {
-                _timeStamp = ToDateTime(header);
-                _hostName = "";
-            }
-
-            //Decode msg
-
-            // (?<TAG>[a-zA-Z0-0]*)(?<CONTENT>[^a-zA-Z0-9].*)
-            test = @"(?<TAG>[a-zA-Z0-0]*)(?<CONTENT>[^a-zA-Z0-9].*)";
-            mRegex = new Regex(test, RegexOptions.Compiled);
-            tmpMatch = mRegex.Match(msg);
-            _tag = tmpMatch.Groups["TAG"].Value;
-            _content = tmpMatch.Groups["CONTENT"].Value.TrimEnd();
-            if (_tag.Length == 0)
-            {
-                _tag = Environment.MachineName;
-            }
         }
 
         #endregion
@@ -75,9 +43,80 @@ namespace ClamAVLibrary
         #endregion
         #region Methods
 
+        public override bool Parse(string host, string message)
+        {
+            bool parsed = false;
+
+            // Decode message
+            // <165>1 2020-04-12T10:54:36Z GENESIS rtl_433 - - - {"time":"2020-04-12 11:54:35","model":"Oil Watchman","id":138043494,"flags":192,"maybetemp":8,"temperature_C":35.0,"binding_countdown":0,"depth":55}
+
+            Match match = _Expression.Match(message);
+
+            if (match.Success == true)
+            {
+                parsed = true;
+
+                // Decode the header
+
+                string prival = match.Groups["PRIVAL"].Value;
+
+                //Decode Prival
+                try
+                {
+                    int priority = Convert.ToInt32(prival);
+                    if (priority < 0)
+                    {
+                        _facility = FacilityType.Internally;
+                        _severity = SeverityType.Critical;
+                    }
+                    else
+                    {
+                        int facility = priority >> 3;  // divide by 8 by shifting left
+                        int severity = priority & 0x7; // and with 7 to mask out
+                        _facility = (FacilityType)Enum.Parse(typeof(FacilityType), facility.ToString());
+                        _severity = (SeverityType)Enum.Parse(typeof(SeverityType), severity.ToString());
+                    }
+                }
+                catch (Exception e)
+                {
+                    log.Error(e.ToString());
+                    _facility = FacilityType.Internally;
+                    _severity = SeverityType.Critical;
+                }
+
+                _version = Convert.ToInt32(match.Groups["VERSION"].Value);
+                _timeStamp = Convert.ToDateTime(match.Groups["TIMESTAMP"].Value);
+                _hostName = match.Groups["HOSTNAME"].Value;
+                _tag = match.Groups["APPNAME"].Value;
+                _procId = match.Groups["PROCID"].Value;
+                _messageId = match.Groups["MSGID"].Value;
+
+                // decode the structured data
+
+                _structuredData = match.Groups["STRUCTUREDDATA"].Value;
+
+                //Decode message
+
+                _content = match.Groups["MSG"].Value;
+
+                log.Debug("prival='" + prival.ToString() + "'");
+                log.Debug("-> facility='" + _facility.ToString() + "'");
+                log.Debug("-> severity='" + _severity.ToString() + "'");
+                log.Debug("verson=" + _version);
+                log.Debug("timeStamp=" + _timeStamp);
+                log.Debug("hostName='" + _hostName + "'");
+                log.Debug("tag='" + _tag + "'");
+                log.Debug("procId='" + _procId + "'");
+                log.Debug("messageId='" + _messageId + "'");
+                log.Debug("structuredData='" + _structuredData + "'");
+                log.Debug("content='" + _content + "'");
+            }
+            return (parsed);
+        }
+
         public override string ToString()
         {
-            return (string.Format("<{0}>{1} {2} {3}: {4}", ((int)_facility * 8) + (int)_severity, _timeStamp.ToString("MMM dd HH:mm:ss"), _hostName, _tag, _content));
+            return (string.Format("<{0}>{1} {2} {3}: {4}", ((int)_facility * 8) + (int)_severity, _timeStamp.ToString("MMM dd HH:mm:ss"), _hostName, _tag, base._content));
         }
 
         #endregion

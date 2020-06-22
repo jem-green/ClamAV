@@ -10,7 +10,7 @@
     <!--Settings can go here, and a limited number of options-->
     <port>3310</port>
   </server>
-  <update id="freshclam">
+  <refresh id="freshclam">
     <settings>
       <setting>
         <key></key>
@@ -28,6 +28,27 @@
       <startdate>10-Feb-2019</startdate>
       <starttime format="HH:mm:ss">00:00:00</starttime>
       <units>day</units>
+      <timeout>1</timeout>
+    </schedule>
+  </refresh>
+  <update id="updateclam">
+    <settings>
+      <setting>
+        <key></key>
+        <value></value>
+      </setting>
+    </settings>
+    <options>
+      <option>
+        <key></key>
+        <value></value>
+      </option>
+    </options>
+    <schedule>
+      <!--<startdate format="dd-MMM-yyyy">10-Feb-2019</startdate>-->
+      <startdate>10-Feb-2019</startdate>
+      <starttime format="HH:mm:ss">00:00:00</starttime>
+      <units>minutes</units>
       <timeout>1</timeout>
     </schedule>
   </update>

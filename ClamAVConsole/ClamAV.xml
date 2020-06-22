@@ -2,28 +2,15 @@
 <clamav>
   <configuration>
     <!--server, client or combined-->
-    <mode>combined</mode>
+    <mode>server</mode>
     <!--Program, App, Local, Roaming-->
     <location>program</location>
   </configuration>
   <server id="clamd" mode="server">
     <!--Settings can go here, and a limited number of options-->
-    <interface>127.0.0.1</interface>
     <port>3310</port>
-    <settings>
-      <setting>
-        <key>tcpaddr</key>
-        <value>mars</value>
-      </setting>
-    </settings>
-    <options>
-      <option>
-        <key></key>
-        <value></value>
-      </option>
-    </options>
   </server>
-  <update id="freshclam">
+  <refresh id="freshclam">
     <settings>
       <setting>
         <key></key>
@@ -43,36 +30,31 @@
       <units>day</units>
       <timeout>1</timeout>
     </schedule>
+  </refresh>
+  <update id="updateclam">
+    <settings>
+      <setting>
+        <key></key>
+        <value></value>
+      </setting>
+    </settings>
+    <options>
+      <option>
+        <key></key>
+        <value></value>
+      </option>
+    </options>
+    <schedule>
+      <!--<startdate format="dd-MMM-yyyy">10-Feb-2019</startdate>-->
+      <startdate>10-Feb-2019</startdate>
+      <starttime format="HH:mm:ss">00:00:00</starttime>
+      <units>minute</units>
+      <timeout>2</timeout>
+    </schedule>
   </update>
   <scans>
-    <!--The problem here is defining if the scan should be a clamdscan or a clamscan and this depends on the server entry
-    which with xml could be out of sequence-->
-    <scan id="dive_c" mode="client">
-      <port>3310</port>
-      <host>mars</host>
-      <settings>
-        <setting>
-          <key></key>
-          <value></value>
-        </setting>
-      </settings>
-      <options>
-        <option>
-          <key></key>
-          <value></value>
-        </option>
-      </options>
-      <schedule>
-        <!--<startdate format="dd-MMM-yyyy">10-feb-2019</startdate>-->
-        <startdate>10-feb-2019</startdate>
-        <starttime format="HH:mm:ss">01:30:00</starttime>
-        <units>day</units>
-        <timeout>1</timeout>
-        <path>c:\</path>
-      </schedule>
-    </scan>
     <!--Assume that the mode is combined as this can proceed in a self contained way-->
-    <scan id="dive_e">
+    <scan id="dive_d" mode="combined">
       <settings>
         <setting>
           <key></key>
@@ -91,7 +73,7 @@
         <starttime format="HH:mm:ss">02:00:00</starttime>
         <units>week</units>
         <timeout>1</timeout>
-        <path>e:\</path>
+        <path>d:\mailstore</path>
       </schedule>
     </scan>
   </scans>

@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using log4net;
+﻿using log4net;
+using System;
 
 namespace ClamAVLibrary
 {
@@ -56,12 +54,20 @@ namespace ClamAVLibrary
             Debug = 7,      // Debug: debug-level messages
         }
 
+        public enum ProtocolFormat
+        {
+            None = -1,
+            Rfc3164 = 0,
+            Rfc5424 = 1
+        }
+
         protected FacilityType _facility = FacilityType.Null;
         protected SeverityType _severity = SeverityType.Null;
         protected string _content = "";
         protected DateTime _timeStamp = DateTime.Now;
         protected string _hostName = "";
         protected string _tag = "";
+        protected ProtocolFormat _protocol = ProtocolFormat.None;
 
         #endregion
         #region Properties
@@ -364,6 +370,39 @@ namespace ClamAVLibrary
             return (facilityType);
         }
 
+        public static ProtocolFormat ProtocolLookup(string ProtocolName)
+        {
+            ProtocolFormat protocol = ProtocolFormat.None;
+
+            if (Int32.TryParse(ProtocolName, out int facilityValue))
+            {
+                protocol = (ProtocolFormat)facilityValue;
+            }
+            else
+            {
+                string lookup = ProtocolName;
+                if (ProtocolName.Length > 1)
+                {
+                    lookup = ProtocolName.ToUpper();
+                }
+
+                switch (lookup)
+                {
+                    case "RFC3164":
+                    case "3164":
+                    case "BSD":
+                        protocol = ProtocolFormat.Rfc3164;
+                        break;
+                    case "RFC5424":
+                    case "5424":
+                    case "AUDIT":
+                        protocol = ProtocolFormat.Rfc5424;
+                        break;
+                }
+            }
+            return (protocol);
+        }
+
         public string Format(string format)
         {
             string content = format;
@@ -376,6 +415,8 @@ namespace ClamAVLibrary
             content = content.Replace("[tag]", _tag);
             return (content);
         }
+
+        public abstract bool Parse(string host, string message);
 
         public object Clone()
         {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ClamAVLibrary
+﻿namespace ClamAVLibrary
 {
     public class Parameter
     {
@@ -10,6 +6,7 @@ namespace ClamAVLibrary
 
         string value;
         SourceType source = SourceType.None;
+
         public enum SourceType
         {
             None = 0,

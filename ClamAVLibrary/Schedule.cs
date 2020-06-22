@@ -54,7 +54,7 @@ namespace ClamAVLibrary
             year = 6
         }
 
-        protected AutoResetEvent signal;
+        protected AutoResetEvent _signal;
         protected object _threadLock = new object();
         protected Thread _thread;
         protected bool _disposed = false;
@@ -275,9 +275,10 @@ namespace ClamAVLibrary
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
-            if (signal != null)
+            
+            if (_signal != null)
             {
-                signal.Set();   // force out of the waitOne
+                _signal.Set();   // force out of the waitOne
             }
             _running = false;
 
@@ -372,7 +373,7 @@ namespace ClamAVLibrary
                         }
                 }
             }
-            return (timeoutUnit);          
+            return (timeoutUnit);
         }
 
         #endregion
@@ -389,7 +390,7 @@ namespace ClamAVLibrary
 
             // process clamdscan at the defined intervals
 
-            signal = new AutoResetEvent(false);
+            _signal = new AutoResetEvent(false);
             _running = true;
 
             DateTime start = DateTime.Now;    // Set the start timer
@@ -418,7 +419,7 @@ namespace ClamAVLibrary
 
                 do
                 {
-                    signal.WaitOne(sleepFor);    // Every Interval check
+                    _signal.WaitOne(sleepFor);    // Every Interval check
                     span = DateTime.Now.Subtract(start);
                 }
                 while (((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0)) && (_running == true));
