@@ -14,7 +14,6 @@ namespace UpdateClam
 {
     class Program
     {
-        public event System.Net.DownloadProgressChangedEventHandler DownloadProgressChanged;
         static string _unreservedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~";
         static string _appdir = "c:\\program files\\clamav";
         static string _tempdir = "c:\\program files\\clamav";
@@ -100,7 +99,8 @@ namespace UpdateClam
             _appdir = System.Reflection.Assembly.GetExecutingAssembly().Location;
             int pos = _appdir.LastIndexOf('\\');
             _appdir = _appdir.Substring(0, pos);
-            _tempdir = _appdir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+
+            _tempdir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
 
             for (int item = 0; item < args.Length; item++)
             {
@@ -189,6 +189,10 @@ namespace UpdateClam
                     {
                         FileVersionInfo currentVersion = FileVersionInfo.GetVersionInfo(fileNamePath);
                         fileVersion = currentVersion.FileVersion.Trim();
+                        if (fileVersion.Length == 0)
+                        {
+                            fileVersion = currentVersion.ProductVersion.Trim();
+                        }
                     }
 
                     if ((fileVersion != search) || (_update == true))
@@ -289,7 +293,7 @@ namespace UpdateClam
                                 }
 
                             }
-                            catch (WebException we)
+                            catch (WebException)
                             {
                                 errorCode = 4;
                                 Console.Error.WriteLine("Could not download package from " + uri);
@@ -300,7 +304,7 @@ namespace UpdateClam
                                 Console.Error.WriteLine("Exception " + ce.Message);
                             }
                         }
-                        catch (Exception fe)
+                        catch (Exception)
                         {
                             errorCode = 6;
                             Console.Error.WriteLine("Could not delete " + fileNamePath);
@@ -312,7 +316,7 @@ namespace UpdateClam
                         errorCode = 0;
                     }
                 }
-                catch (FileNotFoundException e)
+                catch (FileNotFoundException)
                 {
                     errorCode = 2;
                     Console.Error.WriteLine("File not found " + fileNamePath);
@@ -323,7 +327,7 @@ namespace UpdateClam
                     Console.Error.WriteLine("Exception " + ex.Message);
                 }
             }
-            catch (WebException we)
+            catch (WebException)
             {
                 errorCode = 1;
                 Console.Error.WriteLine("Could not connect to " + uri);
@@ -387,9 +391,9 @@ namespace UpdateClam
                             }
                         }
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
-                        //
+                        value = value;
                     }
                 }
 

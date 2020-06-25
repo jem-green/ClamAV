@@ -16,17 +16,29 @@ namespace ClamAVLibrary
         #region Event handling
 
         /// <summary>
-        /// Occurs when the socket receives a message.
+        /// Occurs when event is received.
         /// </summary>
-        public event EventHandler<NotificationEventArgs> SocketReceived;
+        public event EventHandler<NotificationEventArgs> EventReceived;
+
+        /// <summary>
+        /// Occurs when a command is received
+        /// </summary>
+        public event EventHandler<CommandEventArgs> CommandReceived;
 
         /// <summary>
         /// Handles the actual event
         /// </summary>
         /// <param name="e"></param>
-        protected virtual void OnSocketReceived(NotificationEventArgs e)
+        protected virtual void OnEventReceived(NotificationEventArgs e)
         {
-            EventHandler<NotificationEventArgs> handler = SocketReceived;
+            EventHandler<NotificationEventArgs> handler = EventReceived;
+            if (handler != null)
+                handler(this, e);
+        }
+
+        protected virtual void OnCommandReceived(CommandEventArgs e)
+        {
+            EventHandler<CommandEventArgs> handler = CommandReceived;
             if (handler != null)
                 handler(this, e);
         }
@@ -684,7 +696,7 @@ namespace ClamAVLibrary
         public void Resume()
         {
             log.Debug("In Resume()");
-            log.Info("[" + _id + "] pause");
+            log.Info("[" + _id + "] resume");
 
             _signal.Set();
 

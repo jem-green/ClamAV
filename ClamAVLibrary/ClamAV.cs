@@ -1,6 +1,7 @@
 ﻿using log4net;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Threading;
 
 namespace ClamAVLibrary
@@ -11,15 +12,20 @@ namespace ClamAVLibrary
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
-        AutoResetEvent _monitorSignal = new AutoResetEvent(false);
-        Queue<Event> _messageQueue;
-        private object _threadLock = new object();
+        private readonly AutoResetEvent _notificationSignal = new AutoResetEvent(false);
+        private readonly AutoResetEvent _commandSignal = new AutoResetEvent(false);
+        private readonly Queue<Event> _messageQueue;
+        private readonly Queue<Command> _commandQueue;
+        private readonly object _threadLock = new object();
         private Thread _monitoringThread;
-
+        private Thread commandThread;
         private bool _disposed = false;
-        private ManualResetEvent monitorEventTerminate = new ManualResetEvent(false);
-        bool _monitorRunning = true;
-        private int monitorInterval = 60000;
+        private readonly ManualResetEvent monitorEventTerminate = new ManualResetEvent(false);
+        private ManualResetEvent CommandEventTerminate = new ManualResetEvent(false);
+
+        bool _notificationRunning = true;
+        bool _commandRunning = true;
+        private readonly int monitorInterval = 60000;
 
         private Component.DataLocation _location = Component.DataLocation.App;
 
@@ -27,7 +33,7 @@ namespace ClamAVLibrary
         private FreshClam _refresh;
         private List<Component> _scans;
         private UpdateClam _update;
-        Dictionary<string, Forwarder> _forwarders = null;
+        readonly Dictionary<string, Forwarder> _forwarders = null;
         Component.OperatingMode _mode = Component.OperatingMode.Combined;
 
         #endregion
@@ -40,6 +46,7 @@ namespace ClamAVLibrary
             //_update = new UpdateClam();
             _scans = new List<Component>();
             _messageQueue = new Queue<Event>();
+            _commandQueue = new Queue<Command>();
             _forwarders = new Dictionary<string, Forwarder>();
             log.Debug("Out ClamAV()");
         }
@@ -160,7 +167,7 @@ namespace ClamAVLibrary
                 {
                     _server.IsBackground = true;
                     _server.WriteConfig();
-                    _server.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _server.EventReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     _server.Start();
                 }
             }
@@ -172,7 +179,7 @@ namespace ClamAVLibrary
                 if (_refresh != null)
                 {
                     _refresh.WriteConfig();
-                    _refresh.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _refresh.EventReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     _refresh.Start();
                 }
             }
@@ -184,7 +191,8 @@ namespace ClamAVLibrary
                 if (_update != null)
                 {
                     _update.WriteConfig();
-                    _update.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _update.EventReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    _update.CommandReceived += new EventHandler<CommandEventArgs>(OnCommandReceived);
                     _update.Start();
                 }
             }
@@ -198,7 +206,7 @@ namespace ClamAVLibrary
                     // could double check the actual mode here
 
                     scan.WriteConfig();
-                    scan.SocketReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
+                    scan.EventReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
                     scan.Start();
                 }
             }
@@ -212,6 +220,7 @@ namespace ClamAVLibrary
                 {
                     case Forwarder.ForwarderType.SYSLOG:
                         {
+                            log.Info("Add SYSLOG");
                             SysLog syslog = new SysLog(forwarder.Host, forwarder.Port)
                             {
                                 Facility = forwarder.Facility,
@@ -247,16 +256,25 @@ namespace ClamAVLibrary
             {
                 if (!IsMonitoring)
                 {
-                    monitorEventTerminate.Reset();
                     _monitoringThread = new Thread(new ThreadStart(MonitoringThread))
                     {
                         IsBackground = true
                     };
                     _monitoringThread.Start();
+
                     Event notification = new Event("ClamAV", "ClamAV", "Started", Event.EventLevel.Emergency);
                     _messageQueue.Enqueue(notification);
+
+                    // Start the command thread
+
+                    commandThread = new Thread(new ThreadStart(CommandThread))
+                    {
+                        IsBackground = true
+                    };
+                    commandThread.Start();
+					
                     Thread.Sleep(1000);         // Wait for the monitoring loop to start
-                    _monitorSignal.Set();       // force out of the waitOne
+                    _notificationSignal.Set();       // force out of the waitOne
                 }
             }
             log.Debug("Out Start()");
@@ -273,11 +291,14 @@ namespace ClamAVLibrary
 
             Event notification = new Event("ClamAV", "ClamAV", "Stopped", Event.EventLevel.Emergency);
             _messageQueue.Enqueue(notification);
-            _monitorSignal.Set();        // force out of the waitOne
-            Thread.Sleep(1000);
+            _notificationSignal.Set();        // force out of the waitOne
 
-            _monitorRunning = false;     // Exit the watch loop
-            _monitorSignal.Set();        // force out of the waitOne
+            _commandRunning = false;       // Exit the check loop
+            _commandSignal.Set();       // force out of the waitOne
+
+            _notificationRunning = false;     // Exit the watch loop
+            _notificationSignal.Set();        // force out of the waitOne
+
             lock (_threadLock)
             {
                 Thread thread = _monitoringThread;
@@ -286,9 +307,18 @@ namespace ClamAVLibrary
                     monitorEventTerminate.Set();
                     thread.Join();
                 }
-
-
             }
+			
+			lock (_threadLock)
+            {
+                Thread thread = commandThread;
+                if (thread != null)
+                {
+                    CommandEventTerminate.Set();
+                    thread.Join();
+                }
+            }
+			
             log.Debug("Out Stop()");
         }
         /// <summary>
@@ -423,7 +453,24 @@ namespace ClamAVLibrary
 
             try
             {
-                MonitorLoop();
+                MonitorNotification();
+            }
+            catch (Exception e)
+            {
+                log.Fatal(e.ToString());
+            }
+            _monitoringThread = null;
+            
+            log.Debug("Out MonitoringThread()");
+        }
+
+        private void CommandThread()
+        {
+            log.Debug("In CommandThread()");
+
+            try
+            {
+                MonitorCommand();
             }
             catch (Exception e)
             {
@@ -431,25 +478,111 @@ namespace ClamAVLibrary
             }
             _monitoringThread = null;
 
-            log.Debug("Out MonitoringThread()");
+            log.Debug("Out CommandThread()");
         }
 
-        private void MonitorLoop()
+        private void MonitorNotification()
         {
-            log.Debug("In MonitorLoop()");
+            log.Debug("In MonitorNitification()");
 
             // Monitor messages received from the scanner or updater
 
-            _monitorRunning = true;
+            _notificationRunning = true;
             do
             {
-                _monitorSignal.WaitOne(monitorInterval);
-                log.Debug("Processing queue");
+                _notificationSignal.WaitOne(monitorInterval);
+                log.Debug("Processing notification");
                 while (_messageQueue.Count > 0)
                 {
                     Event clamEvent = _messageQueue.Peek();
 
-                    if (clamEvent.Type == Event.EventType.Pause)
+                    foreach (KeyValuePair<string, Forwarder> entry in _forwarders)
+                    {
+                        Forwarder forwarder = entry.Value;
+                        try
+                        {
+                            // Need to translate events to notifications
+                            Notify.PriorityOrder priority = Notify.PriorityOrder.Normal;
+                            switch (clamEvent.Level)
+                            {
+                                case Event.EventLevel.Information:
+                                    {
+                                        priority = Notify.PriorityOrder.Low;
+                                        break;
+                                    }
+                                case Event.EventLevel.Notification:
+                                    {
+                                        priority = Notify.PriorityOrder.Moderate;
+                                        break;
+                                    }
+                                case Event.EventLevel.Warning:
+                                    {
+                                        priority = Notify.PriorityOrder.Moderate;
+                                        break;
+                                    }
+                                case Event.EventLevel.Error:
+                                    {
+                                        priority = Notify.PriorityOrder.Normal;
+                                        break;
+                                    }
+                                case Event.EventLevel.Critical:
+                                    {
+                                        priority = Notify.PriorityOrder.High;
+                                        break;
+                                    }
+                                case Event.EventLevel.Alert:
+                                    {
+                                        priority = Notify.PriorityOrder.High;
+                                        break;
+                                    }
+                                case Event.EventLevel.Emergency:
+                                    {
+                                        priority = Notify.PriorityOrder.Emergency;
+                                        break;
+                                    }
+                            }
+
+                            int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description, priority);
+                            if (error > 0)
+                            {
+                                log.Error("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
+                            }
+                            else
+                            {
+                                log.Debug("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            log.Debug(e.ToString());
+                        }
+                    }
+                    
+                    _messageQueue.Dequeue();
+                }
+                log.Debug("Processed notification");
+            }
+            while (_notificationRunning == true);
+
+            log.Debug("Out MonitorNitification()");
+        }
+
+        private void MonitorCommand()
+        {
+            log.Debug("In MonitorCommand()");
+
+            // Monitor command received from the scanner or updater
+
+            _commandRunning = true;
+            do
+            {
+                _commandSignal.WaitOne(monitorInterval);
+                log.Debug("Processing command");
+                while (_commandQueue.Count > 0)
+                {
+                    Command command = _commandQueue.Peek();
+
+                    if (command.Type == Command.CommandType.Pause)
                     {
                         // If running in server or combined mode then need to stop clamd
                         if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined))
@@ -457,7 +590,7 @@ namespace ClamAVLibrary
                             _server.Pause();
                         }
                     }
-                    if (clamEvent.Type == Event.EventType.Resume)
+                    if (command.Type == Command.CommandType.Resume)
                     {
                         // If running in server or combined mode then need to start clamd 
                         if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined))
@@ -465,77 +598,13 @@ namespace ClamAVLibrary
                             _server.Resume();
                         }
                     }
-                    else if (clamEvent.Type == Event.EventType.Notification)
-                    {
-                        foreach (KeyValuePair<string, Forwarder> entry in _forwarders)
-                        {
-                            Forwarder forwarder = entry.Value;
-                            try
-                            {
-                                // Need to translate events to notifications
-                                Notify.PriorityOrder priority = Notify.PriorityOrder.Normal;
-                                switch (clamEvent.Level)
-                                {
-                                    case Event.EventLevel.Information:
-                                        {
-                                            priority = Notify.PriorityOrder.Low;
-                                            break;
-                                        }
-                                    case Event.EventLevel.Notification:
-                                        {
-                                            priority = Notify.PriorityOrder.Moderate;
-                                            break;
-                                        }
-                                    case Event.EventLevel.Warning:
-                                        {
-                                            priority = Notify.PriorityOrder.Moderate;
-                                            break;
-                                        }
-                                    case Event.EventLevel.Error:
-                                        {
-                                            priority = Notify.PriorityOrder.Normal;
-                                            break;
-                                        }
-                                    case Event.EventLevel.Critical:
-                                        {
-                                            priority = Notify.PriorityOrder.High;
-                                            break;
-                                        }
-                                    case Event.EventLevel.Alert:
-                                        {
-                                            priority = Notify.PriorityOrder.High;
-                                            break;
-                                        }
-                                    case Event.EventLevel.Emergency:
-                                        {
-                                            priority = Notify.PriorityOrder.Emergency;
-                                            break;
-                                        }
-                                }
-
-                                int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description, priority);
-                                if (error > 0)
-                                {
-                                    log.Error("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
-                                }
-                                else
-                                {
-                                    log.Debug("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
-                                }
-                            }
-                            catch (Exception e)
-                            {
-                                log.Debug(e.ToString());
-                            }
-                        }
-                    }
-                    _messageQueue.Dequeue();
+                    _commandQueue.Dequeue();
                 }
-                log.Debug("Processed queue");
+                log.Debug("Processed command");
             }
-            while (_monitorRunning == true);
+            while (_commandRunning == true);
 
-            log.Debug("Out MonitorLoop()");
+            log.Debug("Out MonitorCommand()");
         }
 
         // Define the event handlers.
@@ -546,10 +615,23 @@ namespace ClamAVLibrary
                 if (e.Notification.Name.Length > 0)
                 {
                     _messageQueue.Enqueue(e.Notification);
-                    _monitorSignal.Set();
+                    _notificationSignal.Set();
                 }
             }
         }
+
+        private void OnCommandReceived(object source, CommandEventArgs e)
+        {
+            if (e.Command != null)
+            {
+                if (e.Command.Name.Length > 0)
+                {
+                    _commandQueue.Enqueue(e.Command);
+                    _commandSignal.Set();
+                }
+            }
+        }
+
         #endregion
     }
 }

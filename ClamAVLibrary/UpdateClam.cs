@@ -124,15 +124,15 @@ namespace ClamAVLibrary
                     string data = outputData.Data;
                     if (data.ToUpper().LastIndexOf("PAUSE") > 0)
                     {
-                        Event notification = new Event("ClamAV", _id, data, Event.EventLevel.Notification, Event.EventType.Pause);
-                        NotificationEventArgs args = new NotificationEventArgs(notification);
-                        OnSocketReceived(args);
+                        Command command = new Command("ClamAV", _id, data, Command.CommandType.Pause);
+                        CommandEventArgs args = new CommandEventArgs(command);
+                        OnCommandReceived(args);
                     }
                     else if (data.ToUpper().LastIndexOf("RESUME") > 0)
                     {
-                        Event notification = new Event("ClamAV", _id, data, Event.EventLevel.Notification, Event.EventType.Resume);
-                        NotificationEventArgs args = new NotificationEventArgs(notification);
-                        OnSocketReceived(args);
+                        Command command = new Command("ClamAV", _id, data, Command.CommandType.Resume);
+                        CommandEventArgs args = new CommandEventArgs(command);
+                        OnCommandReceived(args);
                     }
 
                     base.OutputReceived(sendingProcess, outputData);
@@ -153,7 +153,7 @@ namespace ClamAVLibrary
                         {
                             Event notification = new Event("ClamAV", _id, data.Substring(9, data.Length - 9), Event.EventLevel.Warning);
                             NotificationEventArgs args = new NotificationEventArgs(notification);
-                            OnSocketReceived(args);
+                            OnEventReceived(args);
                         }
                     }
                     else if (data.Length > 7)
@@ -162,7 +162,7 @@ namespace ClamAVLibrary
                         {
                             Event notification = new Event("ClamAV", _id, data.Substring(7, data.Length - 7), Event.EventLevel.Error);
                             NotificationEventArgs args = new NotificationEventArgs(notification);
-                            OnSocketReceived(args);
+                            OnEventReceived(args);
                         }
                     }
                     base.ErrorReceived(sendingProcess, errorData);

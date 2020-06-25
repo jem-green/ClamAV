@@ -43,6 +43,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command.cs" />
+    <Compile Include="CommandEventArgs.cs" />
     <Compile Include="UpdateClam.cs" />
     <Compile Include="Component.cs" />
     <Compile Include="Clamd.cs" />

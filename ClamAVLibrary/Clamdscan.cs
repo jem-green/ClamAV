@@ -258,13 +258,13 @@ namespace ClamAVLibrary
                     {
                         Event notification = new Event("ClamAV", _id, data, Event.EventLevel.Critical);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
-                        OnSocketReceived(args);
+                        OnEventReceived(args);
                     }
                     else if (data.ToUpper().LastIndexOf("ERROR") > 0)
                     {
                         Event notification = new Event("ClamAV", _id, data, Event.EventLevel.Error);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
-                        OnSocketReceived(args);
+                        OnEventReceived(args);
                     }
                     base.OutputReceived(sendingProcess, outputData);
                 }
@@ -282,13 +282,13 @@ namespace ClamAVLibrary
                     {
                         Event notification = new Event("ClamAV", _id, data.Substring(9, data.Length - 9), Event.EventLevel.Warning);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
-                        OnSocketReceived(args);
+                        OnEventReceived(args);
                     }
                     else if (data.Substring(0, 7).ToUpper() == "ERROR: ")
                     {
                         Event notification = new Event("ClamAV", _id, data.Substring(7, data.Length - 7), Event.EventLevel.Error);
                         NotificationEventArgs args = new NotificationEventArgs(notification);
-                        OnSocketReceived(args);
+                        OnEventReceived(args);
                     }
                     base.ErrorReceived(sendingProcess, errorData);
                 }

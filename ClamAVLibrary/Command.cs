@@ -1,41 +1,46 @@
 ﻿namespace ClamAVLibrary
 {
-    public class Event
+    public class Command
     {
         #region Variables
 
         string _application = "";
         string _name = "";
-        EventLevel _eventLevel;
-        string _eventDescription = "";
+        string _commandDescription = "";
+        CommandType _type = CommandType.Null;
 
-        //Log levels 
+        //Command types
 
-        public enum EventLevel
+        public enum CommandType
         {
             Null = -1,
-            Emergency = 0,
-            Alert = 1,
-            Critical = 2,
-            Error = 3,
-            Warning = 4,
-            Notification = 5,
-            Information = 6
+            Pause = 0,
+            Resume = 1,
+            Stop = 2,
+            Start = 3
         }
 
         #endregion
         #region Constructor
 
-        public Event()
+        public Command()
         {
         }
 
-        public Event(string name, string application, string description, EventLevel level)
+        public Command(string name, string application, string description)
         {
             _name = name;
             _application = application;
-            _eventDescription = description;
-            _eventLevel = level;
+            _commandDescription = description;
+            _type = CommandType.Null;
+        }
+
+        public Command(string name, string application, string description, CommandType type)
+        {
+            _name = name;
+            _application = application;
+            _commandDescription = description;
+            _type = type;
         }
 
         #endregion
@@ -57,23 +62,11 @@
         {
             set
             {
-                _eventDescription = value;
+                _commandDescription = value;
             }
             get
             {
-                return (_eventDescription);
-            }
-        }
-
-        public EventLevel Level
-        {
-            set
-            {
-                _eventLevel = value;
-            }
-            get
-            {
-                return (_eventLevel);
+                return (_commandDescription);
             }
         }
 
@@ -86,6 +79,18 @@
             get
             {
                 return (_name);
+            }
+        }
+
+        public CommandType Type
+        {
+            set
+            {
+                _type = value;
+            }
+            get
+            {
+                return (_type);
             }
         }
 
