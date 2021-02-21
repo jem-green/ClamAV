@@ -1,1 +1,0 @@
-tail -f "C:\program files\ClamAV\ClamAVservice.log
