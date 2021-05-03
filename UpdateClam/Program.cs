@@ -140,7 +140,7 @@ namespace UpdateClam
 
             string _filename = "clamd.exe";
             string host = "https://www.clamav.net";
-            string path = "/downloads";
+            string path = "/downloads/";
             string search = "The latest stable release is\n            <strong>";
             string query = "";
             string data = "";
@@ -152,6 +152,11 @@ namespace UpdateClam
             uri = ParseUri(host, path, query);
             request = (HttpWebRequest)WebRequest.Create(uri);
             request.Method = WebRequestMethods.Http.Get;
+            request.Accept = "text/html";
+            request.UserAgent = ".NET Framework Test Client";
+
+            // Enable TLS 1.2
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
             try
             {
@@ -327,7 +332,7 @@ namespace UpdateClam
                     Console.Error.WriteLine("Exception " + ex.Message);
                 }
             }
-            catch (WebException)
+            catch (WebException we)
             {
                 errorCode = 1;
                 Console.Error.WriteLine("Could not connect to " + uri);
