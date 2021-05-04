@@ -4,7 +4,7 @@ namespace ClamAVLibrary
 {
     public class ScheduleEventArgs : EventArgs
     {
-        #region Variables
+        #region Fields
         DateTime _timeout;
         #endregion
         #region Constructor

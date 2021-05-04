@@ -4,7 +4,7 @@ namespace ClamAVLibrary
 {
     public class CommandEventArgs : EventArgs
     {
-        #region Variables
+        #region Fields
         private Command _command;
         #endregion
         #region Constructor

@@ -7,7 +7,7 @@ namespace ClamAVLibrary
     {
         // http://www.ietf.org/rfc/rfc5424.txt
 
-        #region variables
+        #region Fields
 
         private static string _headerPattern = @"\<(?<PRIVAL>\d{1,3})\>(?<VERSION>[1-9]{0,2}) (?<TIMESTAMP>(\S|\w)+) (?<HOSTNAME>-|(\S|\w){1,255}) (?<APPNAME>-|(\S|\w){1,48}) (?<PROCID>-|(\S|\w){1,128}) (?<MSGID>-|(\S|\w){1,32})";
         private static string _structuredDataPattern = @"(?<STRUCTUREDDATA>-|\[[^\[\=\x22\]\x20]{1,32}( ([^\[\=\x22\]\x20]{1,32}=\x22.+\x22))?\])";

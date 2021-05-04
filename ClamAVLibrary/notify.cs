@@ -3,7 +3,7 @@
     // Forwarder base class
     public class Notify
     {
-        #region Variables
+        #region Fields
         // Generally there are 5 levels supported by most notfication solutions
         public enum PriorityOrder
         {

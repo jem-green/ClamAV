@@ -19,6 +19,8 @@ namespace UpdateClam
         static string _tempdir = "c:\\program files\\clamav";
         static bool _readInput = false;
         static bool _update = false;
+        static bool _downloaded = false;
+        static Progress _progress;
 
         static int Main(string[] args)
         {
@@ -153,7 +155,7 @@ namespace UpdateClam
             request = (HttpWebRequest)WebRequest.Create(uri);
             request.Method = WebRequestMethods.Http.Get;
             request.Accept = "text/html";
-            request.UserAgent = ".NET Framework Test Client";
+            request.UserAgent = "updateclient";
 
             // Enable TLS 1.2
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
@@ -229,13 +231,29 @@ namespace UpdateClam
 
                                 // Download the file - see if we can show progresss.
 
+                                _downloaded = false;
+                                _progress = new Progress(0, 100);
                                 using (WebClient client = new WebClient())
                                 {
+                                    client.Headers.Add("User-Agent", "updateclient");
                                     Console.Error.WriteLine("Download " + uri);
                                     Console.Error.WriteLine("Temporary location " + fileNamePath);
+                                    client.DownloadFileAsync(new Uri(uri), fileNamePath);
                                     client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
-                                    client.DownloadFile(uri, fileNamePath);
+                                    //client.DownloadFile(uri, fileNamePath);
                                 }
+
+                                _progress.Width = 80;
+                                _progress.Change = Progress.ChangeType.position;
+                                _progress.Visible = true;
+                                Console.CursorVisible = false;
+                                Console.CursorLeft = 0;
+
+                                do
+                                {
+                                    Thread.Sleep(1000);
+                                }
+                                while (_downloaded == false);
 
                                 try
                                 {
@@ -298,10 +316,11 @@ namespace UpdateClam
                                 }
 
                             }
-                            catch (WebException)
+                            catch (WebException iwe)
                             {
                                 errorCode = 4;
                                 Console.Error.WriteLine("Could not download package from " + uri);
+                                Console.Error.WriteLine("Web Exception " + iwe.ToString());
                             }
                             catch (Exception ce)
                             {
@@ -336,6 +355,7 @@ namespace UpdateClam
             {
                 errorCode = 1;
                 Console.Error.WriteLine("Could not connect to " + uri);
+                Console.Error.WriteLine("Web Exception " + we.ToString());
             }
 
             return (errorCode);
@@ -343,8 +363,21 @@ namespace UpdateClam
 
         private static void DownloadProgressCallback(object sender, DownloadProgressChangedEventArgs e)
         {
-            // In case you don't have a progressBar Log the value instead 
-            Console.WriteLine(e.ProgressPercentage);
+            // In case you don't have a progressBar Log the value instead
+
+            _progress.Current = e.ProgressPercentage;
+            _progress.Update();
+
+            if (_progress.hasChanged == true)
+            {
+                Console.CursorLeft = 0;
+                Console.Write(_progress.Show());
+            }
+
+            if (e.ProgressPercentage == 100)
+            {
+                _downloaded = true;
+            }
         }
 
         static string ParseUri(string host, string path, string query)

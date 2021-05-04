@@ -4,7 +4,7 @@ namespace ClamAVLibrary
 {
     public class NotificationEventArgs : EventArgs
     {
-        #region Variables
+        #region Fields
         private Event _notification;
         #endregion
         #region Constructor

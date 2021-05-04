@@ -12,7 +12,7 @@ namespace ClamAVLibrary
 {
     public class Watcher //: IDisposable
     {
-        //        #region Variables
+        //        #region Fields
 
         //        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 

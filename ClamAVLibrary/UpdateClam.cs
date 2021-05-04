@@ -11,7 +11,7 @@ namespace ClamAVLibrary
     /// </summary>
     public class UpdateClam : Component
     {
-        #region Variables
+        #region Fields
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 

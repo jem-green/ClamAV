@@ -2,7 +2,7 @@
 {
     public class Command
     {
-        #region Variables
+        #region Fields
 
         string _application = "";
         string _name = "";

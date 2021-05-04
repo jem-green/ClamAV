@@ -7,7 +7,7 @@ namespace ClamAVLibrary
 {
     public class Node : IComparable
     {
-        #region Variables
+        #region Fields
         private string nodeId;
         private int instanceId = 0;
         private string ip = "127.0.0.1";

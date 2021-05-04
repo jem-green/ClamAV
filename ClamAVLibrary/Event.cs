@@ -2,7 +2,7 @@
 {
     public class Event
     {
-        #region Variables
+        #region Fields
 
         string _application = "";
         string _name = "";

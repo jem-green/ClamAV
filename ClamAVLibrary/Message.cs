@@ -8,7 +8,7 @@ namespace ClamAVLibrary
     /// </summary>
     public abstract class Message : ICloneable
     {
-        #region Variable
+        #region Fields
 
         protected static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 

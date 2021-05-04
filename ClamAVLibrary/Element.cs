@@ -8,14 +8,14 @@ namespace ClamAVLibrary
     /// </summary>
     public class Element
     {
-        #region Variables
+        #region Fields
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         protected string _id = "";
         protected bool _enabled = true;
 
-        #endregion Variables
+        #endregion
         #region Constructors
 
         public Element()

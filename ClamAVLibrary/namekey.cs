@@ -2,7 +2,7 @@
 {
     public class NameKey
     {
-        #region Variables
+        #region Fields
 
         private string _name;
         private string _key;

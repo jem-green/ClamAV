@@ -44,7 +44,7 @@ namespace ClamAVLibrary
         }
 
         #endregion
-        #region Variables
+        #region Fields
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         protected string _id = "";

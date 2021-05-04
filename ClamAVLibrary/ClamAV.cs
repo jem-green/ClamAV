@@ -8,7 +8,7 @@ namespace ClamAVLibrary
 {
     public class ClamAV : IDisposable
     {
-        #region Variables
+        #region Fields
 
         private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 

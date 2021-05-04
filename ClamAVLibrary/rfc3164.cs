@@ -7,7 +7,7 @@ namespace ClamAVLibrary
     {
         // http://www.ietf.org/rfc/rfc3164.txt
 
-        #region variables
+        #region Fields
 
         //<(?<PRI>([0-9]{1,3}))>(?<HEADER>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}\s[\-\[\]a-zA-Z0-9:._]+\s)(?<MSG>.*)
         private static string _pattern = @"<(?<PRI>([0-9]{1,3}))>(?<HEADER>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)\s+\d{1,2}\s[0-9]{2}:[0-9]{2}:[0-9]{2}\s[\-\[\]a-zA-Z0-9:._]+\s)(?<MSG>.*)";

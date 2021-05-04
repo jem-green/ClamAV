@@ -5,7 +5,7 @@ namespace ClamAVLibrary
 {
     public class SysLog : Notify, INotify
     {
-        #region Variables
+        #region Fields
 
         protected static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private int _port = 514;                                             // The port to use
