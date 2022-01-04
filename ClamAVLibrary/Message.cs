@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 
 namespace ClamAVLibrary
@@ -9,8 +9,6 @@ namespace ClamAVLibrary
     public abstract class Message : ICloneable
     {
         #region Fields
-
-        protected static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         public enum FacilityType : int
         {
@@ -150,7 +148,7 @@ namespace ClamAVLibrary
                     _tag = value;
                     if (_tag.Length > 32)
                     {
-                        throw new Exception("TAG name too long > 32 characters");
+                        throw new ArgumentOutOfRangeException("TAG name too long > 32 characters");
                     }
                 }
             }

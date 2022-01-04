@@ -80,7 +80,7 @@
   <forwarders>
     <forwarder id="syslog">
       <type>SYSLOG</type>
-      <host>earth</host>
+      <host>tiangong</host>
       <protocol>rfc3164</protocol>
       <severity>Emergency</severity>
       <facility>Kernel</facility>

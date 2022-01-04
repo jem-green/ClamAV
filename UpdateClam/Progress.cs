@@ -121,7 +121,7 @@ namespace UpdateClam
                 return (visible);
             }
         }
-        public bool hasChanged
+        public bool HasChanged
         {
             get
             {

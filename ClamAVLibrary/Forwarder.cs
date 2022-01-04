@@ -1,8 +1,9 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Diagnostics;
 
 namespace ClamAVLibrary
 {
@@ -10,7 +11,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         ForwarderType _type = ForwarderType.Corral;
         string _key = "";
         string _username = "";
@@ -41,9 +41,9 @@ namespace ClamAVLibrary
         #region Constructor
         public Forwarder()
         {
-            log.Debug("In Forwarder()");
+            Debug.WriteLine("In Forwarder()");
             _keys = new List<NameKey>();
-            log.Debug("Out Forwarder()");
+            Debug.WriteLine("Out Forwarder()");
         }
 
         #endregion
@@ -280,12 +280,12 @@ namespace ClamAVLibrary
 
         public bool Execute(Message message)
         {
-            log.Debug("In Execute");
+            Debug.WriteLine("In Execute()");
             // need to translate beween syslog and other messaging
             // do we let the notifyer determine this.
-            log.Debug("Notify " + _id);
+            TraceInternal.TraceVerbose("Notify " + _id);
             _notifier.Notify(message.HostName, message.Tag, message.Content);
-            log.Debug("Out Execute");
+            Debug.WriteLine("Out Execute()");
             return (true);
         }
 
@@ -294,7 +294,7 @@ namespace ClamAVLibrary
 
         private static IPAddress GetIPAddress(string host)
         {
-            log.Debug("In GetIPAddress");
+            Debug.WriteLine("In GetIPAddress()");
             IPAddress ip = IPAddress.Parse("127.0.0.1");
             try
             {
@@ -315,7 +315,7 @@ namespace ClamAVLibrary
                 }
                 catch { };
             }
-            log.Debug("Out GetIPAddress");
+            Debug.WriteLine("Out GetIPAddress()");
             return (ip);
         }
 

@@ -3,8 +3,7 @@
     public class Parameter
     {
         #region Fields
-
-        string value;
+        object _value;
         SourceType source = SourceType.None;
 
         public enum SourceType
@@ -19,25 +18,25 @@
         #region Constructor
         public Parameter(string value)
         {
-            this.value = value;
+            this._value = value;
             source = SourceType.None;
         }
         public Parameter(string value, SourceType source)
         {
-            this.value = value;
+            this._value = value;
             this.source = source;
         }
         #endregion
         #region Parameters
-        public string Value
+        public object Value
         {
             set
             {
-                this.value = value;
+                this._value = value;
             }
             get
             {
-                return (value);
+                return (_value);
             }
         }
 
@@ -56,7 +55,7 @@
         #region Methods
         public override string ToString()
         {
-            return (value);
+            return (_value.ToString());
         }
         #endregion
     }

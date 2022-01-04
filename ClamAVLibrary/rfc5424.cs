@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using TracerLibrary;
 
 namespace ClamAVLibrary
 {
@@ -79,7 +80,7 @@ namespace ClamAVLibrary
                 }
                 catch (Exception e)
                 {
-                    log.Error(e.ToString());
+                    TraceInternal.TraceError(e.ToString());
                     _facility = FacilityType.Internally;
                     _severity = SeverityType.Critical;
                 }
@@ -99,17 +100,17 @@ namespace ClamAVLibrary
 
                 _content = match.Groups["MSG"].Value;
 
-                log.Debug("prival='" + prival.ToString() + "'");
-                log.Debug("-> facility='" + _facility.ToString() + "'");
-                log.Debug("-> severity='" + _severity.ToString() + "'");
-                log.Debug("verson=" + _version);
-                log.Debug("timeStamp=" + _timeStamp);
-                log.Debug("hostName='" + _hostName + "'");
-                log.Debug("tag='" + _tag + "'");
-                log.Debug("procId='" + _procId + "'");
-                log.Debug("messageId='" + _messageId + "'");
-                log.Debug("structuredData='" + _structuredData + "'");
-                log.Debug("content='" + _content + "'");
+                TraceInternal.TraceVerbose("prival='" + prival.ToString() + "'");
+                TraceInternal.TraceVerbose("-> facility='" + _facility.ToString() + "'");
+                TraceInternal.TraceVerbose("-> severity='" + _severity.ToString() + "'");
+                TraceInternal.TraceVerbose("verson=" + _version);
+                TraceInternal.TraceVerbose("timeStamp=" + _timeStamp);
+                TraceInternal.TraceVerbose("hostName='" + _hostName + "'");
+                TraceInternal.TraceVerbose("tag='" + _tag + "'");
+                TraceInternal.TraceVerbose("procId='" + _procId + "'");
+                TraceInternal.TraceVerbose("messageId='" + _messageId + "'");
+                TraceInternal.TraceVerbose("structuredData='" + _structuredData + "'");
+                TraceInternal.TraceVerbose("content='" + _content + "'");
             }
             return (parsed);
         }

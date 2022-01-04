@@ -14,6 +14,8 @@ namespace UpdateClam
 {
     class Program
     {
+        #region Fields
+
         static string _unreservedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.~";
         static string _appdir = "c:\\program files\\clamav";
         static string _tempdir = "c:\\program files\\clamav";
@@ -21,10 +23,16 @@ namespace UpdateClam
         static bool _update = false;
         static bool _downloaded = false;
         static Progress _progress;
+        static bool _showProgress = false;
 
+        #endregion
+        #region Methods
         static int Main(string[] args)
         {
-            int errorCode = 0;
+            // Read in specific configuration
+
+            Debug.WriteLine("Enter Main()");
+            int errorCode = -1;
 
             if (ValidateArguments(args))
             {
@@ -45,8 +53,13 @@ namespace UpdateClam
                 Console.Error.Write(Usage());
                 errorCode = -1;
             }
+
+            Debug.WriteLine("Exit Main()");
             return (errorCode);
         }
+
+        #endregion
+        #region Private
 
         static bool ValidateArguments(string[] args)
         {
@@ -80,7 +93,7 @@ namespace UpdateClam
         static string Usage()
         {
             string usage = "";
-            usage =  "                       Clam AntiVirus: Application Updater 0.1.0\n";
+            usage =  "                       Clam AntiVirus: Application Updater 0.2.0\n";
             usage += "           By The Green Team: https://www.32high.co.uk\n";
             usage += "           (C) 2020 32High\n";
             usage += "\n";
@@ -88,6 +101,7 @@ namespace UpdateClam
             usage += "\n";
             usage += "    --force                -f         Force the update\n";
             usage += "    --help                 -h         Show this help\n";
+            usage += "    --progress             -p         Show progress\n";
             usage += "    --appdir=DIRECTORY                Install new application into DIRECTORY";
             usage += "    --tempdir=DIRECTORY               Download installer into DIRECTORY";
             usage += "\n";
@@ -114,6 +128,11 @@ namespace UpdateClam
                         _appdir = argument.Substring(9, argument.Length - 9);
                         _appdir = _appdir.TrimStart('"');
                         _appdir = _appdir.TrimEnd('"');
+                    }
+
+                    if (argument.Substring(0, 10) == "--progress")
+                    {
+                        _showProgress = true;
                     }
                 }
                 else if (argument.Length > 10)
@@ -209,9 +228,14 @@ namespace UpdateClam
 
                         // Download
 
-                        string installer = "ClamAV-" + search + ".exe";
+                        string platform = ".win.x64";
+                        string extension = ".zip";
+                        string installer = "clamav-" + search + platform + extension;
+  
                         path = "/downloads/production/" + installer;
                         uri = ParseUri(host, path, query);
+
+                        //https://www.clamav.net/downloads/production/clamav-0.104.0.win.x64.msi
 
                         try
                         {
@@ -233,27 +257,46 @@ namespace UpdateClam
 
                                 _downloaded = false;
                                 _progress = new Progress(0, 100);
-                                using (WebClient client = new WebClient())
+                                try
                                 {
-                                    client.Headers.Add("User-Agent", "updateclient");
-                                    Console.Error.WriteLine("Download " + uri);
-                                    Console.Error.WriteLine("Temporary location " + fileNamePath);
-                                    client.DownloadFileAsync(new Uri(uri), fileNamePath);
-                                    client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
-                                    //client.DownloadFile(uri, fileNamePath);
+
+                                    using (WebClient client = new WebClient())
+                                    {
+                                        client.Headers.Add("User-Agent", "updateclient");
+                                        Console.Error.WriteLine("Download " + uri);
+                                        Console.Error.WriteLine("Temporary location " + fileNamePath);
+                                        if (_showProgress == true)
+                                        {
+                                            client.DownloadFileAsync(new Uri(uri), fileNamePath);
+                                            client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
+                                        }
+                                        else
+                                        {
+                                            client.DownloadFile(uri, fileNamePath);
+                                            _downloaded = true;
+                                        }
+                                    }
+                                }
+                                catch (Exception e)
+                                {
+                                    Console.Error.WriteLine(e.ToString());
                                 }
 
-                                _progress.Width = 80;
-                                _progress.Change = Progress.ChangeType.position;
-                                _progress.Visible = true;
-                                Console.CursorVisible = false;
-                                Console.CursorLeft = 0;
+                                if (_showProgress == true)
+                                {
+                                    _progress.Width = 80;
+                                    _progress.Change = Progress.ChangeType.position;
+                                    _progress.Visible = true;
+                                    Console.CursorVisible = false;
+                                    Console.CursorLeft = 0;
+                                }
 
                                 do
                                 {
                                     Thread.Sleep(1000);
                                 }
                                 while (_downloaded == false);
+         
 
                                 try
                                 {
@@ -267,8 +310,8 @@ namespace UpdateClam
 
                                     ProcessStartInfo startInfo = new ProcessStartInfo();
 
-                                    startInfo.FileName = fileNamePath;
-                                    startInfo.Arguments = "/SUPRESSMESSAGEBOX /VERYSILENT";
+                                    startInfo.FileName = "unzip.exe";
+                                    startInfo.Arguments = "-q -o -j \"" + fileNamePath + "\" \"*.exe\" \"*.dll\" -d \"" + _appdir + "\"";
                                     startInfo.CreateNoWindow = true;
                                     startInfo.UseShellExecute = true;
 
@@ -278,12 +321,12 @@ namespace UpdateClam
                                     proc.StartInfo = startInfo;
                                     try
                                     {
-                                        Console.Error.WriteLine("Install " + fileNamePath);
+                                        Console.Error.WriteLine("Unpack " + fileNamePath);
                                         proc.Start();
-                                        Console.WriteLine(fileNamePath + " " + startInfo.Arguments);
+                                        Console.WriteLine(startInfo.FileName + " " + startInfo.Arguments);
 
                                         proc.WaitForExit();
-                                        Console.Error.WriteLine("Finished installing");
+                                        Console.Error.WriteLine("Finished unpacking");
                                         Console.WriteLine("Update complete so issue RESUME");
                                         errorCode = 0;
 
@@ -368,7 +411,7 @@ namespace UpdateClam
             _progress.Current = e.ProgressPercentage;
             _progress.Update();
 
-            if (_progress.hasChanged == true)
+            if (_progress.HasChanged == true)
             {
                 Console.CursorLeft = 0;
                 Console.Write(_progress.Show());
@@ -429,10 +472,7 @@ namespace UpdateClam
                             }
                         }
                     }
-                    catch (Exception)
-                    {
-                        value = value;
-                    }
+                    catch { };
                 }
 
                 parsed = parsed + key + "=" + UrlEncode(value) + "&";

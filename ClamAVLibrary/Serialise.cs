@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,8 +13,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         string _filename = "";
         string _path = "";
 
@@ -26,8 +24,8 @@ namespace ClamAVLibrary
 
         public Serialise(string filename, string path)
         {
-            this._filename = filename;
-            this._path = path;
+            _filename = filename;
+            _path = path;
         }
 
         #endregion
@@ -122,12 +120,12 @@ namespace ClamAVLibrary
 
                                         if (!xmlReader.IsEmptyElement)
                                         {
-                                            log.Info(Level(level) + "<" + element + ">");
+                                            TraceInternal.TraceVerbose(Level(level) + "<" + element + ">");
                                             level = level + 1;
                                         }
                                         else
                                         {
-                                            log.Info(Level(level) + "<" + element + "/>");
+                                            TraceInternal.TraceVerbose(Level(level) + "<" + element + "/>");
                                         }
 
                                         switch (element)
@@ -474,7 +472,7 @@ namespace ClamAVLibrary
                                     {
                                         element = xmlReader.LocalName;
                                         level = level - 1;
-                                        log.Info(Level(level) + "</" + element + ">");
+                                        TraceInternal.TraceVerbose(Level(level) + "</" + element + ">");
                                         switch (element)
                                         {
                                             #region Configuration
@@ -596,7 +594,7 @@ namespace ClamAVLibrary
                                         text = xmlReader.Value;
                                         text = text.Replace("\t", "");
                                         text = text.Replace("\n", "");
-                                        log.Info(Level(level) + text);
+                                        TraceInternal.TraceVerbose(Level(level) + text);
 
                                         switch (element)
                                         {
@@ -878,7 +876,7 @@ namespace ClamAVLibrary
                                 case XmlNodeType.Attribute:
                                     break;
                                 default:
-                                    log.Info(xmlReader.NodeType);
+                                    TraceInternal.TraceVerbose(xmlReader.NodeType.ToString());
                                     break;
 
                             }
@@ -889,24 +887,24 @@ namespace ClamAVLibrary
                     }
                     catch (Exception ex)
                     {
-                        log.Warn("XML Error " + ex.Message);
+                        TraceInternal.TraceWarning("XML Error " + ex.Message);
                     }
                     fs.Close();
                     fs.Dispose();   // Force the dispose as it was getting left open
                 }
                 catch (FileNotFoundException ex)
                 {
-                    log.Warn("File Error " + ex.Message);
+                    TraceInternal.TraceWarning("File Error " + ex.Message);
                 }
                 catch (Exception ex)
                 {
-                    log.Warn("File Error " + ex.Message);
+                    TraceInternal.TraceError("File Error " + ex.Message);
                 }
 
             }
             catch (Exception e)
             {
-                log.Error("Other Error " + e.Message);
+                TraceInternal.TraceError("Other Error " + e.Message);
             }
 
             return (clamAV);

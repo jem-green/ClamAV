@@ -30,8 +30,3 @@ using System.Runtime.InteropServices;
 //
 [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-//
-// Add log4net
-//
-[assembly: log4net.Config.XmlConfigurator(ConfigFile = "ClamAVService.exe.config", Watch = true)]   //For log4net 1.2.10.0
-

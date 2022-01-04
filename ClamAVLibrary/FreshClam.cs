@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,8 +13,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         #endregion
         #region Constructors
 
@@ -28,7 +26,7 @@ namespace ClamAVLibrary
 
         public FreshClam(string id, DataLocation location)
         {
-            log.Debug("In FreshClam()");
+            Debug.WriteLine("In FreshClam()");
 
             _id = id;
             _execute = "freshclam.exe";
@@ -157,7 +155,7 @@ namespace ClamAVLibrary
             _options.Add(new Option("verbose"));
             _options.Add(new Option("version"));
 
-            log.Debug("Out FreshClam()");
+            Debug.WriteLine("Out FreshClam()");
         }
 
         #endregion

@@ -1,5 +1,7 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System.Net.Sockets;
+using System.Diagnostics;
+using System;
 
 namespace ClamAVLibrary
 {
@@ -7,7 +9,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        protected static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private int _port = 514;                                             // The port to use
         private string _host = "";                                           // the name to message
         Message.FacilityType _facility = Message.FacilityType.Kernel;        //
@@ -128,13 +129,13 @@ namespace ClamAVLibrary
         /// <returns></returns>
         public int Notify(string applicationName, string eventName, string description, PriorityOrder priority)
         {
-            log.Debug("In Notify");
+            Debug.WriteLine("In Notify()");
 
-            log.Info("Send SysLog Message");
-            log.Debug("ApplicationName=" + applicationName);
-            log.Debug("EventName=" + eventName);
-            log.Debug("Description=" + description);
-            log.Debug("Priority=" + priority);
+            TraceInternal.TraceInformation("Send SysLog Message");
+            TraceInternal.TraceVerbose("ApplicationName=" + applicationName);
+            TraceInternal.TraceVerbose("EventName=" + eventName);
+            TraceInternal.TraceVerbose("Description=" + description);
+            TraceInternal.TraceVerbose("Priority=" + priority);
             ErrorCode error = ErrorCode.None;
 
             // Translate priority into severyity
@@ -177,7 +178,32 @@ namespace ClamAVLibrary
                 Facility = _facility,
                 HostName = System.Environment.MachineName.ToUpper()
             };
-            message.Tag = string.Format("{0}[{1}]", eventName, applicationName);
+
+            string tag;
+            try
+            {
+                tag = string.Format("{0}[{1}]", eventName, applicationName);
+
+                if (tag.Length > 32)
+                {
+                    tag = eventName;
+                    if (tag.Length > 32)
+                    {
+                        tag = eventName.Replace(" ", "");
+                        if (tag.Length > 32)
+                        {
+                            tag = message.Tag.Substring(0, 32);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TraceInternal.TraceError(ex.ToString());
+                tag = "";
+            }
+            message.Tag = tag;
+
             message.Content = description;
             try
             {
@@ -199,11 +225,11 @@ namespace ClamAVLibrary
                     {
                         if (severity == Message.SeverityType.Emergency)
                         {
-                            log.Warn("Sent -> " + message);
+                            TraceInternal.TraceWarning("Sent -> " + message);
                         }
                         else
                         {
-                            log.Error("Sent -> " + message);
+                            TraceInternal.TraceError("Sent -> " + message);
                         }
                         error = ErrorCode.None;
                     }
@@ -211,10 +237,10 @@ namespace ClamAVLibrary
             }
             catch (SocketException e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
                 error = ErrorCode.General;
             }
-            log.Debug("Out Notify");
+            Debug.WriteLine("Out Notify()");
             return ((int)error);
         }
 

@@ -1,5 +1,4 @@
-﻿using log4net;
-using System;
+﻿using System;
 
 namespace ClamAVLibrary
 {
@@ -9,9 +8,7 @@ namespace ClamAVLibrary
     public class Element
     {
         #region Fields
-
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
+        
         protected string _id = "";
         protected bool _enabled = true;
 

@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,8 +13,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         #endregion
         #region Constructors
 
@@ -28,7 +26,7 @@ namespace ClamAVLibrary
 
         public UpdateClam(string id, DataLocation location)
         {
-            log.Debug("In UpdateClam()");
+            Debug.WriteLine("In UpdateClam()");
 
             _id = id;
             _execute = "updateclam.exe";
@@ -100,7 +98,7 @@ namespace ClamAVLibrary
             _options.Add(new Option("tempdir"));
             _options.Add(new Option("force"));
 
-            log.Debug("Out UpdateClam()");
+            Debug.WriteLine("Out UpdateClam()");
         }
 
         #endregion
@@ -182,6 +180,7 @@ namespace ClamAVLibrary
 
     --force                -f         Force the update
     --help                 -h         Show this help
+    --progress             -p         Show progress bar
     --appdir=DIRECTORY                Install new application into DIRECTORY
     --tempdir=DIRECTORY               Download installer into DIRECTORY
      

@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -46,7 +46,6 @@ namespace ClamAVLibrary
         #endregion
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         protected string _id = "";
         protected AutoResetEvent _signal = new AutoResetEvent(false);
         protected object _threadLock = new object();
@@ -381,7 +380,7 @@ namespace ClamAVLibrary
 
         public bool Update(object configuration)
         {
-            log.Debug("In Update()");
+            Debug.WriteLine("In Update()");
             bool update = false;
             try
             {
@@ -393,7 +392,7 @@ namespace ClamAVLibrary
                         if (_settings[i].Key == setting.Key)
                         {
                             _settings[i] = setting;
-                            log.Info("[" + _id + "] update setting:" + setting.Key + "=" + setting.Value.ToString());
+                            TraceInternal.TraceVerbose("[" + _id + "] update setting:" + setting.Key + "=" + setting.Value.ToString());
                         }
                     }
                 }
@@ -405,7 +404,7 @@ namespace ClamAVLibrary
                         if (_options[i].Key == option.Key)
                         {
                             _options[i] = option;
-                            log.Info("[" + _id + "] update option:" + option.Key + "=" + option.Value.ToString());
+                            TraceInternal.TraceVerbose("[" + _id + "] update option:" + option.Key + "=" + option.Value.ToString());
                         }
                     }
                 }
@@ -413,15 +412,15 @@ namespace ClamAVLibrary
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
-            log.Debug("Out Update()");
+            Debug.WriteLine("Out Update()");
             return (update);
         }
 
         public bool Add(object configuration)
         {
-            log.Debug("In Add()");
+            Debug.WriteLine("In Add()");
             bool add = false;
             try
             {
@@ -429,28 +428,28 @@ namespace ClamAVLibrary
                 {
                     Setting setting = (Setting)configuration;
                     _settings.Add(setting);
-                    log.Info("Update setting:" + setting.Key + "=" + setting.Value.ToString());
+                    TraceInternal.TraceVerbose("Update setting:" + setting.Key + "=" + setting.Value.ToString());
                     add = true;
                 }
                 else
                 {
                     Option option = (Option)configuration;
                     _options.Add(option);
-                    log.Info("Update setting:" + option.Key + "=" + option.Value.ToString());
+                    TraceInternal.TraceVerbose("Update setting:" + option.Key + "=" + option.Value.ToString());
                     add = true;
                 }
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
-            log.Debug("Out Add()");
+            Debug.WriteLine("Out Add()");
             return (add);
         }
 
         public bool Remove(object configuration)
         {
-            log.Debug("In Remove()");
+            Debug.WriteLine("In Remove()");
             bool remove = false;
             try
             {
@@ -467,15 +466,15 @@ namespace ClamAVLibrary
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
-            log.Debug("Out Remove()");
+            Debug.WriteLine("Out Remove()");
             return (remove);
         }
 
         public string BuildOptions()
         {
-            log.Debug("In BuildOptions()");
+            Debug.WriteLine("In BuildOptions()");
 
             StringWriter options = new StringWriter();
             foreach (Option option in _options)
@@ -555,7 +554,7 @@ namespace ClamAVLibrary
                 options.Write(" " + _path);
             }
 
-            log.Debug("Out BuildOptions()");
+            Debug.WriteLine("Out BuildOptions()");
             return (options.ToString());
         }
 
@@ -566,7 +565,7 @@ namespace ClamAVLibrary
 
         public bool WriteConfig(bool overwrite)
         {
-            log.Debug("In WriteConfig()");
+            Debug.WriteLine("In WriteConfig()");
             bool written = false;
 
             StringWriter config = new StringWriter();
@@ -639,7 +638,7 @@ namespace ClamAVLibrary
                 }
                 catch (Exception e)
                 {
-                    log.Error(e.ToString());
+                    TraceInternal.TraceError(e.ToString());
                 }
             }
 
@@ -656,9 +655,9 @@ namespace ClamAVLibrary
             }
             catch (Exception ex)
             {
-                log.Error(ex.ToString());
+                TraceInternal.TraceError(ex.ToString());
             }
-            log.Debug("Out WriteConfig()");
+            Debug.WriteLine("Out WriteConfig()");
             return (written);
         }
 
@@ -675,19 +674,19 @@ namespace ClamAVLibrary
         /// </summary>
         public void Pause()
         {
-            log.Debug("In Pause()");
-            log.Info("[" + _id + "] pause");
+            Debug.WriteLine("In Pause()");
+            TraceInternal.TraceVerbose("[" + _id + "] pause");
 
             if (_downloading == true)
             {
                 if (proc != null)
                 {
-                    log.Debug("Kill running process (" + proc.Id + ")");
+                    TraceInternal.TraceVerbose("Kill running process (" + proc.Id + ")");
                     // Terminate the running process
                     proc.Kill();
                 }
             }
-            log.Debug("Out Pause()");
+            Debug.WriteLine("Out Pause()");
         }
 
         /// <summary>
@@ -695,12 +694,12 @@ namespace ClamAVLibrary
         /// </summary>
         public void Resume()
         {
-            log.Debug("In Resume()");
-            log.Info("[" + _id + "] resume");
+            Debug.WriteLine("In Resume()");
+            TraceInternal.TraceVerbose("[" + _id + "] resume");
 
             _signal.Set();
 
-            log.Debug("Out Resume()");
+            Debug.WriteLine("Out Resume()");
         }
 
         /// <summary>
@@ -708,8 +707,8 @@ namespace ClamAVLibrary
         /// </summary>
         public void Start()
         {
-            log.Debug("In Start()");
-            log.Info("[" + _id + "] start");
+            Debug.WriteLine("In Start()");
+            TraceInternal.TraceVerbose("[" + _id + "] start");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -727,7 +726,7 @@ namespace ClamAVLibrary
                     _thread.Start();
                 }
             }
-            log.Debug("Out Start()");
+            Debug.WriteLine("Out Start()");
         }
 
         /// <summary>
@@ -735,8 +734,8 @@ namespace ClamAVLibrary
         /// </summary>
         public void Stop()
         {
-            log.Debug("In Stop()");
-            log.Info("[" + _id + "] stop");
+            Debug.WriteLine("In Stop()");
+            TraceInternal.TraceVerbose("[" + _id + "] stop");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -749,7 +748,7 @@ namespace ClamAVLibrary
                 {
                     if (proc != null)
                     {
-                        log.Debug("Kill running process (" + proc.Id + ")");
+                        TraceInternal.TraceVerbose("Kill running process (" + proc.Id + ")");
                         // Terminate the running process
                         proc.Kill();
                     }
@@ -766,7 +765,7 @@ namespace ClamAVLibrary
                 }
             }
 
-            log.Debug("Out Stop()");
+            Debug.WriteLine("Out Stop()");
         }
 
         /// <summary>
@@ -780,7 +779,7 @@ namespace ClamAVLibrary
 
         protected virtual void Dispose(bool disposing)
         {
-            log.Debug("In Dispose()");
+            Debug.WriteLine("In Dispose()");
             if (!_disposed)
             {
                 if (disposing == true)
@@ -793,7 +792,7 @@ namespace ClamAVLibrary
                 }
                 _disposed = true;
             }
-            log.Debug("Out Dispose()");
+            Debug.WriteLine("Out Dispose()");
         }
 
         #endregion
@@ -805,7 +804,7 @@ namespace ClamAVLibrary
             {
                 if (outputData.Data.Trim().Length > 0)
                 {
-                    log.Debug("[" + _id + "] output=" + outputData.Data);
+                    TraceInternal.TraceVerbose("[" + _id + "] output=" + outputData.Data);
                 }
             }
         }
@@ -816,7 +815,7 @@ namespace ClamAVLibrary
             {
                 if (errorData.Data.Trim().Length > 0)
                 {
-                    log.Debug("[" + _id + "] error=" + errorData.Data);
+                    TraceInternal.TraceVerbose("[" + _id + "] error=" + errorData.Data);
                 }
             }
         }
@@ -831,9 +830,9 @@ namespace ClamAVLibrary
         /// </summary>
         private void MonitorThread()
         {
-            log.Debug("In MonitorThread()");
+            Debug.WriteLine("In MonitorThread()");
 
-            log.Info("[" + Id + "] monitoring");
+            TraceInternal.TraceVerbose("[" + Id + "] monitoring");
 
             _running = true;
             do
@@ -854,7 +853,7 @@ namespace ClamAVLibrary
                         }
                         catch (Exception e)
                         {
-                            log.Debug(e.ToString());
+                            TraceInternal.TraceError(e.ToString());
                         }
 
                         //Loop();
@@ -862,15 +861,14 @@ namespace ClamAVLibrary
                 }
                 catch (Exception e)
                 {
-                    log.Fatal(e.ToString());
+                    TraceInternal.TraceCritical(e.ToString());
                 }
             }
             while (_running == true);
 
-
             _thread = null;
 
-            log.Debug("Out MonitorThread()");
+            Debug.WriteLine("Out MonitorThread()");
         }
 
         /// <summary>
@@ -878,7 +876,7 @@ namespace ClamAVLibrary
         /// </summary>
         //private void Loop()
         //{
-        //    log.Debug("In Loop()");
+        //    Debug.WriteLine("In Loop()");
 
         //    //
 
@@ -913,7 +911,7 @@ namespace ClamAVLibrary
         //        {
         //            signal.WaitOne(sleepFor);    // Every Interval check
         //            span = DateTime.Now.Subtract(start);
-        //            log.Debug("Checking");
+        //            Debug.WriteLine("Checking");
         //        }
         //        while ((((long)span.TotalSeconds < timeout) && (timeout > 0)) || (timeout == 0));
 
@@ -924,12 +922,12 @@ namespace ClamAVLibrary
         //    }
         //    while (_running == true);
 
-        //    log.Debug("Out Loop()");
+        //    Debug.WriteLine("Out Loop()");
         //}
 
         private void Launch()
         {
-            log.Debug("In Launch()");
+            Debug.WriteLine("In Launch()");
 
             _downloading = true;
 
@@ -955,15 +953,15 @@ namespace ClamAVLibrary
             try
             {
                 proc.Start();
-                log.Info("[" + _id + "] start " + _executePath + startInfo.Arguments);
+                TraceInternal.TraceVerbose("[" + _id + "] start " + _executePath + startInfo.Arguments);
                 proc.BeginOutputReadLine();
                 proc.BeginErrorReadLine();
                 proc.WaitForExit();
-                log.Info("[" + _id + "] finished ");
+                TraceInternal.TraceVerbose("[" + _id + "] finished ");
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
 
             proc.Dispose();
@@ -971,20 +969,20 @@ namespace ClamAVLibrary
 
             _downloading = false;
 
-            log.Debug("Out Launch()");
+            Debug.WriteLine("Out Launch()");
         }
 
         // Define the event handlers.
         private void OnTimeoutReceived(object source, ScheduleEventArgs e)
         {
-            log.Debug("In OnTimeoutReceived()");
+            Debug.WriteLine("In OnTimeoutReceived()");
             Launch();
-            log.Debug("Out OnTimeoutReceived()");
+            Debug.WriteLine("Out OnTimeoutReceived()");
         }
 
         private static long TimeConvert(Schedule.TimeoutUnit schedule, long timeout)
         {
-            log.Debug("In TimeConvert()");
+            Debug.WriteLine("In TimeConvert()");
             long seconds = timeout;
 
             // convert to seconds
@@ -1012,7 +1010,7 @@ namespace ClamAVLibrary
                     }
                     break;
             }
-            log.Debug("Out TimeConvert()");
+            Debug.WriteLine("Out TimeConvert()");
             return (seconds);
         }
 
@@ -1044,7 +1042,7 @@ namespace ClamAVLibrary
 
         private static IPAddress GetInterfaceAddress(string cidr, int bits)
         {
-            log.Debug("In GetInterfaceAddress()");
+            Debug.WriteLine("In GetInterfaceAddress()");
             IPAddress ip = IPAddress.Parse("127.0.0.1");
             long subnet = 0;
             if (bits == 0)
@@ -1080,14 +1078,14 @@ namespace ClamAVLibrary
                     {
                         foreach (UnicastIPAddressInformation addressInformation in networkInterface.GetIPProperties().UnicastAddresses)
                         {
-                            log.Debug("Check " + addressInformation.Address);
+                            TraceInternal.TraceVerbose("Check " + addressInformation.Address);
                             if (addressInformation.Address.AddressFamily == AddressFamily.InterNetwork)
                             {
                                 long ipAddress = BitConverter.ToInt32(addressInformation.Address.GetAddressBytes(), 0);
                                 if ((subnet & mask) == (ipAddress & mask))
                                 {
                                     ip = addressInformation.Address;
-                                    log.Debug("ip=" + ip);
+                                    TraceInternal.TraceVerbose("ip=" + ip);
                                     break;
                                 }
                             }
@@ -1095,13 +1093,13 @@ namespace ClamAVLibrary
                     }
                 }
             }
-            log.Debug("Out GetInterfaceAddress()");
+            Debug.WriteLine("Out GetInterfaceAddress()");
             return (ip);
         }
 
         private static IPAddress GetIPAddress(string host)
         {
-            log.Debug("In GetIPAddress");
+            Debug.WriteLine("In GetIPAddress()");
             IPAddress ip = IPAddress.Parse("127.0.0.1");
             try
             {
@@ -1122,7 +1120,7 @@ namespace ClamAVLibrary
                 }
                 catch { };
             }
-            log.Debug("Out GetIPAddress");
+            Debug.WriteLine("Out GetIPAddress()");
             return (ip);
         }
     }

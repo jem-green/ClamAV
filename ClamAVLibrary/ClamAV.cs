@@ -1,16 +1,15 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Threading;
+using System.Diagnostics;
 
 namespace ClamAVLibrary
 {
     public class ClamAV : IDisposable
     {
         #region Fields
-
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         private readonly AutoResetEvent _notificationSignal = new AutoResetEvent(false);
         private readonly AutoResetEvent _commandSignal = new AutoResetEvent(false);
@@ -41,14 +40,14 @@ namespace ClamAVLibrary
 
         public ClamAV()
         {
-            log.Debug("in ClamAV()");
+            Debug.WriteLine("in ClamAV()");
             //_refresh = new FreshClam();
             //_update = new UpdateClam();
             _scans = new List<Component>();
             _messageQueue = new Queue<Event>();
             _commandQueue = new Queue<Command>();
             _forwarders = new Dictionary<string, Forwarder>();
-            log.Debug("Out ClamAV()");
+            Debug.WriteLine("Out ClamAV()");
         }
 
         #endregion
@@ -137,11 +136,11 @@ namespace ClamAVLibrary
             }
             catch (ArgumentException)
             {
-                log.Debug("Duplicate entry " + forwarder.Id);
+                TraceInternal.TraceWarning("Duplicate entry " + forwarder.Id);
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
         }
 
@@ -152,7 +151,7 @@ namespace ClamAVLibrary
 
         public void Monitor()
         {
-            log.Debug("In Monitor()");
+            Debug.WriteLine("In Monitor()");
 
             // Launch the scanners and updators
             // Server = clamd + freshclam + updateclam
@@ -220,7 +219,7 @@ namespace ClamAVLibrary
                 {
                     case Forwarder.ForwarderType.SYSLOG:
                         {
-                            log.Info("Add SYSLOG");
+                            TraceInternal.TraceVerbose("Add SYSLOG");
                             SysLog syslog = new SysLog(forwarder.Host, forwarder.Port)
                             {
                                 Facility = forwarder.Facility,
@@ -232,7 +231,7 @@ namespace ClamAVLibrary
                 }
             }
 
-            log.Debug("Out Monitor()");
+            Debug.WriteLine("Out Monitor()");
         }
 
         /// <summary>
@@ -247,7 +246,7 @@ namespace ClamAVLibrary
         /// </summary>
         public void Start()
         {
-            log.Debug("In Start()");
+            Debug.WriteLine("In Start()");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -277,14 +276,14 @@ namespace ClamAVLibrary
                     _notificationSignal.Set();       // force out of the waitOne
                 }
             }
-            log.Debug("Out Start()");
+            Debug.WriteLine("Out Start()");
         }
         /// <summary>
         /// Stops the watching thread.
         /// </summary>
         public void Stop()
         {
-            log.Debug("In Stop()");
+            Debug.WriteLine("In Stop()");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -319,7 +318,7 @@ namespace ClamAVLibrary
                 }
             }
 			
-            log.Debug("Out Stop()");
+            Debug.WriteLine("Out Stop()");
         }
         /// <summary>
         /// Disposes this object.
@@ -332,7 +331,7 @@ namespace ClamAVLibrary
 
         protected virtual void Dispose(bool disposing)
         {
-            log.Debug("In Dispose()");
+            Debug.WriteLine("In Dispose()");
             if (!_disposed)
             {
                 if (disposing == true)
@@ -347,7 +346,7 @@ namespace ClamAVLibrary
                 }
                 _disposed = true;
             }
-            log.Debug("Out Dispose()");
+            Debug.WriteLine("Out Dispose()");
         }
 
         public static Component.OperatingMode ModeLookup(string modeName)
@@ -449,7 +448,7 @@ namespace ClamAVLibrary
 
         private void MonitoringThread()
         {
-            log.Debug("In MonitoringThread()");
+            Debug.WriteLine("In MonitoringThread()");
 
             try
             {
@@ -457,16 +456,16 @@ namespace ClamAVLibrary
             }
             catch (Exception e)
             {
-                log.Fatal(e.ToString());
+                TraceInternal.TraceCritical(e.ToString());
             }
             _monitoringThread = null;
             
-            log.Debug("Out MonitoringThread()");
+            Debug.WriteLine("Out MonitoringThread()");
         }
 
         private void CommandThread()
         {
-            log.Debug("In CommandThread()");
+            Debug.WriteLine("In CommandThread()");
 
             try
             {
@@ -474,16 +473,16 @@ namespace ClamAVLibrary
             }
             catch (Exception e)
             {
-                log.Fatal(e.ToString());
+                TraceInternal.TraceCritical(e.ToString());
             }
             _monitoringThread = null;
 
-            log.Debug("Out CommandThread()");
+            Debug.WriteLine("Out CommandThread()");
         }
 
         private void MonitorNotification()
         {
-            log.Debug("In MonitorNitification()");
+            Debug.WriteLine("In MonitorNitification()");
 
             // Monitor messages received from the scanner or updater
 
@@ -491,7 +490,7 @@ namespace ClamAVLibrary
             do
             {
                 _notificationSignal.WaitOne(monitorInterval);
-                log.Debug("Processing notification");
+                TraceInternal.TraceVerbose("Processing notification");
                 while (_messageQueue.Count > 0)
                 {
                     Event clamEvent = _messageQueue.Peek();
@@ -545,31 +544,31 @@ namespace ClamAVLibrary
                             int error = forwarder.Notifier.Notify(clamEvent.Application, clamEvent.Name, clamEvent.Description, priority);
                             if (error > 0)
                             {
-                                log.Error("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
+                                TraceInternal.TraceError("Could not send to " + forwarder.Id + " " + forwarder.Notifier.ErrorDescription(error));
                             }
                             else
                             {
-                                log.Debug("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
+                                TraceInternal.TraceVerbose("Sent to " + forwarder.Id + " " + clamEvent.Name + " " + clamEvent.Description);
                             }
                         }
                         catch (Exception e)
                         {
-                            log.Debug(e.ToString());
+                            TraceInternal.TraceError(e.ToString());
                         }
                     }
                     
                     _messageQueue.Dequeue();
                 }
-                log.Debug("Processed notification");
+                TraceInternal.TraceVerbose("Processed notification");
             }
             while (_notificationRunning == true);
 
-            log.Debug("Out MonitorNitification()");
+            Debug.WriteLine("Out MonitorNitification()");
         }
 
         private void MonitorCommand()
         {
-            log.Debug("In MonitorCommand()");
+            Debug.WriteLine("In MonitorCommand()");
 
             // Monitor command received from the scanner or updater
 
@@ -577,7 +576,7 @@ namespace ClamAVLibrary
             do
             {
                 _commandSignal.WaitOne(monitorInterval);
-                log.Debug("Processing command");
+                TraceInternal.TraceVerbose("Processing command");
                 while (_commandQueue.Count > 0)
                 {
                     Command command = _commandQueue.Peek();
@@ -600,11 +599,11 @@ namespace ClamAVLibrary
                     }
                     _commandQueue.Dequeue();
                 }
-                log.Debug("Processed command");
+                TraceInternal.TraceVerbose("Processed command");
             }
             while (_commandRunning == true);
 
-            log.Debug("Out MonitorCommand()");
+            Debug.WriteLine("Out MonitorCommand()");
         }
 
         // Define the event handlers.

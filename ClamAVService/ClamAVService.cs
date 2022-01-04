@@ -1,33 +1,31 @@
 using ClamAVLibrary;
-using log4net;
+using TracerLibrary;
 using Microsoft.Win32;
 using System;
 using System.IO;
 using System.ServiceProcess;
 using System.Threading;
+using System.Diagnostics;
 
 namespace ClamAVService
 {
     public partial class ClamAVService : ServiceBase
     {
-
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
         private System.Threading.Thread workerThread = null;
         private ClamAV clamAV;
 
         public ClamAVService()
         {
-            log.Debug("In ClamAVService()");
+            Debug.WriteLine("In ClamAVService()");
             InitializeComponent();
             eventLog.Source = "ClamAV";
-            log.Debug("Out ClamAVService()");
+            Debug.WriteLine("Out ClamAVService()");
         }
 
         protected override void OnStart(string[] args)
         {
-
             eventLog.WriteEntry("In OnStart.");
-            log.Debug("In OnStart()");
+            Debug.WriteLine("In OnStart()");
 
             if ((workerThread == null) ||
                 ((workerThread.ThreadState &
@@ -37,16 +35,22 @@ namespace ClamAVService
                 workerThread.Start();
             }
 
-            log.Debug("Out OnStart()");
+            Debug.WriteLine("Out OnStart()");
             eventLog.WriteEntry("Out OnStart.");
         }
 
         protected override void OnStop()
         {
             eventLog.WriteEntry("In OnStop.");
-            log.Debug("In OnStop()");
+            Debug.WriteLine("In OnStop()");
             if (workerThread != null)
             {
+                // showdown any threads cleanly.
+                if (clamAV != null)
+                {
+                    clamAV.Dispose();
+                }
+
                 try
                 {
                     workerThread.Abort();
@@ -58,29 +62,52 @@ namespace ClamAVService
                 }
                 catch { }
             }
-            log.Debug("Out OnStop()");
+            Debug.WriteLine("Out OnStop()");
             eventLog.WriteEntry("Out OnStop.");
         }
 
         void ServiceWorkerMethod()
         {
-            log.Debug("In ServiceWorkerMethod()");
+            Debug.WriteLine("In ServiceWorkerMethod()");
 
             int pos = 0;
-            Parameter clamAVPath = new Parameter("");
-            Parameter clamAVName = new Parameter("clamav.xml");
+            Parameter appPath = new Parameter("");
+            Parameter appName = new Parameter("clamav.xml");
 
-            clamAVPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            pos = clamAVPath.Value.LastIndexOf('\\');
-            clamAVPath.Value = clamAVPath.Value.Substring(0, pos);
-            clamAVPath.Source = Parameter.SourceType.App;
+            appPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
+            pos = appPath.Value.ToString().LastIndexOf(Path.DirectorySeparatorChar);
+            if (pos > 0)
+            {
+                appPath.Value = appPath.Value.ToString().Substring(0, pos);
+                appPath.Source = Parameter.SourceType.App;
+            }
 
             Parameter logPath = new Parameter("");
-            Parameter logName = new Parameter("clamavservice.log");
+            Parameter logName = new Parameter("clamavservice");
             logPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
-            pos = logPath.Value.LastIndexOf('\\');
-            logPath.Value = logPath.Value.Substring(0, pos);
-            logPath.Source = Parameter.SourceType.App;
+            pos = logPath.Value.ToString().LastIndexOf(Path.DirectorySeparatorChar);
+            if (pos > 0)
+            {
+                logPath.Value = logPath.Value.ToString().Substring(0, pos);
+                logPath.Source = Parameter.SourceType.App;
+            }
+
+            Parameter traceLevels = new Parameter("");
+            traceLevels.Value = "verbose";
+            traceLevels.Source = Parameter.SourceType.App;
+
+            // Configure tracer options
+
+            string filenamePath = logPath.Value.ToString() + Path.DirectorySeparatorChar + logName.Value.ToString() + ".log";
+            FileStreamWithRolling dailyRolling = new FileStreamWithRolling(filenamePath, new TimeSpan(1, 0, 0, 0), FileMode.Append);
+            TextWriterTraceListenerWithTime listener = new TextWriterTraceListenerWithTime(dailyRolling);
+            Trace.AutoFlush = true;
+            TraceFilter fileTraceFilter = new System.Diagnostics.EventTypeFilter(SourceLevels.Verbose);
+            listener.Filter = fileTraceFilter;
+            Trace.Listeners.Clear();
+            Trace.Listeners.Add(listener);
+
+            // 
 
             RegistryKey key = RegistryKey.OpenBaseKey(Microsoft.Win32.RegistryHive.LocalMachine, RegistryView.Registry64);
             string keys = "software\\green\\clamav\\";
@@ -89,11 +116,10 @@ namespace ClamAVService
                 key = key.OpenSubKey(subkey);
                 if (key == null)
                 {
-                    log.Debug("Failed to open" + subkey);
+                    TraceInternal.TraceError("Failed to open" + subkey);
                     break;
                 }
             }
-
             // Get the log path
 
             try
@@ -102,16 +128,16 @@ namespace ClamAVService
                 {
                     logPath.Value = (string)key.GetValue("logpath", logPath);
                     logPath.Source = Parameter.SourceType.Registry;
-                    log.Debug("Use registry value logPath=" + logPath);
+                    TraceInternal.TraceVerbose("Use registry value; logPath=" + logPath);
                 }
             }
             catch (NullReferenceException)
             {
-                log.Debug("Registry error use default values; logPath=" + logPath.Value);
+                TraceInternal.TraceVerbose("Registry error use default values; logPath=" + logPath.Value);
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
 
             // Get the log name
@@ -122,17 +148,36 @@ namespace ClamAVService
                 {
                     logName.Value = (string)key.GetValue("logname", logName);
                     logName.Source = Parameter.SourceType.Registry;
-                    log.Debug("Use registry value logName=" + logName);
+                    TraceInternal.TraceVerbose("Use registry value; LogName=" + logName);
                 }
-
             }
             catch (NullReferenceException)
             {
-                log.Debug("Registry error use default values; logName=" + logName.Value);
+                TraceInternal.TraceVerbose("Registry error use default values; LogName=" + logName.Value);
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                Trace.TraceError(e.ToString());
+            }
+
+            // Get the Name
+			
+            try
+            {
+                if (key.GetValue("name", "").ToString().Length > 0)
+                {
+                    appName.Value = (string)key.GetValue("name", appName);
+                    appName.Source = Parameter.SourceType.Registry;
+                    TraceInternal.TraceVerbose("Use registry value; Name=" + appName);
+                }
+            }
+            catch (NullReferenceException)
+            {
+                TraceInternal.TraceVerbose("Registry error use default values; Name=" + appName.Value);
+            }
+            catch (Exception e)
+            {
+                TraceInternal.TraceError(e.ToString());
             }
 
             // Get the path
@@ -141,108 +186,83 @@ namespace ClamAVService
             {
                 if (key.GetValue("path", "").ToString().Length > 0)
                 {
-                    clamAVPath.Value = (string)key.GetValue("path", clamAVPath);
-                    clamAVPath.Source = Parameter.SourceType.Registry;
-                    log.Debug("Use registry value Name=" + clamAVPath);
+                    appPath.Value = (string)key.GetValue("path", appPath);
+                    appPath.Source = Parameter.SourceType.Registry;
+                    TraceInternal.TraceVerbose("Use registry value; Path=" + appPath);
                 }
             }
             catch (NullReferenceException)
             {
-                log.Debug("Registry error use default values; Name=" + clamAVPath.Value);
+                TraceInternal.TraceVerbose("Registry error use default values; Path=" + appPath.Value);
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
 
-            // Get the name
+            // Get the traceLevels
 
             try
             {
-                if (key.GetValue("name", "").ToString().Length > 0)
+                if (key.GetValue("debug", "").ToString().Length > 0)
                 {
-                    clamAVName.Value = (string)key.GetValue("name", clamAVName);
-                    clamAVName.Source = Parameter.SourceType.Registry;
-                    log.Debug("Use registry value Path=" + clamAVName);
+                    traceLevels.Value = (string)key.GetValue("debug", "verbose");
+                    traceLevels.Source = Parameter.SourceType.Registry;
+                    TraceInternal.TraceVerbose("Use registry value; Debug=" + traceLevels.Value);
                 }
             }
             catch (NullReferenceException)
             {
-                log.Warn("Registry error use default values; Name=" + clamAVName.Value + " Path=" + clamAVPath.Value);
+                TraceInternal.TraceWarning("Registry error use default values; Name=" + appName.Value + " Path=" + appPath.Value);
             }
             catch (Exception e)
             {
-                log.Error(e.ToString());
+                TraceInternal.TraceError(e.ToString());
             }
 
             // Adjust the log location if it has been overridden in the registry
-            // This is an interim measure until can add in the naming mask
 
-            try
-            {
-
-                log4net.Repository.Hierarchy.Hierarchy hierarchy = (log4net.Repository.Hierarchy.Hierarchy)LogManager.GetRepository();
-                log.Debug("Check appenders " + hierarchy.Root.Appenders.Count);
-                foreach (log4net.Appender.IAppender appender in hierarchy.Root.Appenders)
-                {
-                    log.Debug("Check log file appenders " + appender.Name + " " + appender.GetType().Name);
-                    // only set the file appenders
-                    if (appender.GetType() == typeof(log4net.Appender.RollingFileAppender))
-                    {
-                        if (logPath.Value.Length > 0)
-                        {
-                            log4net.Appender.RollingFileAppender rollingFileAppender = (log4net.Appender.RollingFileAppender)appender;
-                            // Programmatically set this to the desired location here
-                            string logFileLocation = logPath.Value + Path.DirectorySeparatorChar;
-                            log.Debug("Set RollingFileAppender logFileLocation=" + logFileLocation);
-                            if (!Directory.Exists(logPath.Value))
-                            {
-                                Directory.CreateDirectory(logPath.Value);
-                            }
-                            rollingFileAppender.File = logFileLocation;
-                            rollingFileAppender.ActivateOptions();
-                            log.Debug("Set logPath=" + logFileLocation);
-                        }
-                    }
-                    else if (appender.GetType() == typeof(log4net.Appender.FileAppender))
-                    {
-                        if ((logPath.Value.Length > 0) && (logName.Value.Length > 0))
-                        {
-                            log4net.Appender.FileAppender fileAppender = (log4net.Appender.FileAppender)appender;
-                            // Programmatically set this to the desired location here
-                            string logFileLocation = Path.Combine(logPath.Value, logName.Value);
-                            log.Debug("Set FileAppender logFileLocation=" + logFileLocation);
-                            if (!Directory.Exists(logPath.Value))
-                            {
-                                Directory.CreateDirectory(logPath.Value);
-                            }
-                            fileAppender.File = logFileLocation;
-                            fileAppender.ActivateOptions();
-                            log.Debug("Set logPath=" + logPath + " logName=" + logName);
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                log.Error("Cannot set log value " + e.ToString());
-            }
-            log.Info("Use Name=" + clamAVName + " Path=" + clamAVPath);
-            log.Info("Use Log Name=" + logName + " Log Path=" + logPath);
-
+            Trace.Listeners.Remove(listener);
+            filenamePath = logPath.Value.ToString() + Path.DirectorySeparatorChar + logName.Value.ToString() + ".log";
+            dailyRolling = new FileStreamWithRolling(filenamePath, new TimeSpan(0, 1, 0, 0), FileMode.Append);
+            listener = new TextWriterTraceListenerWithTime(dailyRolling);
+            Trace.AutoFlush = true;
+            SourceLevels sourceLevels = TraceInternal.TraceLookup(traceLevels.Value.ToString());
+            fileTraceFilter = new System.Diagnostics.EventTypeFilter(sourceLevels);
+            listener.Filter = fileTraceFilter;
+            Trace.Listeners.Add(listener);
+        
+            TraceInternal.TraceInformation("Use Name=" + appName.Value);
+            TraceInternal.TraceInformation("Use Path=" + appPath.Value);
+            TraceInternal.TraceInformation("Use Log Name=" + logName.Value);
+            TraceInternal.TraceInformation("Use Log Path=" + logPath.Value);
+            
             // finally use the xml file.
 
-            Serialise serialise = new Serialise(clamAVName.Value, clamAVPath.Value);
+            Serialise serialise = new Serialise();
+            if (appPath.Value.ToString().Length > 0)
+            {
+                serialise.Path = appPath.Value.ToString();
+            }
+
+            if (appName.Value.ToString().Length > 0)
+            {
+                serialise.Filename = appName.Value.ToString();
+            }
             clamAV = serialise.FromXML();
             if (clamAV != null)
             {
                 //Launch the clamAV thread
+				
                 clamAV.Location = Component.DataLocation.Program;
                 clamAV.Monitor();
+
+                // Start the clamAV thread
+
                 clamAV.Start();
             }
 
-            log.Debug("Out ServiceWorkerMethod()");
+            Debug.WriteLine("Out ServiceWorkerMethod()");
         }
     }
 }

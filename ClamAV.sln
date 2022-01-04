@@ -13,12 +13,14 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "ClamAVSetup", "ClamAVSetup\
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ThirdParty", "ThirdParty", "{132F8D89-1533-4FFD-A167-169347B53B46}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "log4net", "log4net", "{53667249-B00E-4731-9879-2F3EEEA0E0C4}"
-	ProjectSection(SolutionItems) = preProject
-		ThirdParty\log4net\log4net.dll = ThirdParty\log4net\log4net.dll
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updateclam", "UpdateClam\updateclam.csproj", "{642D5505-E326-4CD8-B3E1-1CB8792FB4AD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tracer", "Tracer", "{4C1F7491-7C9E-4386-92D4-CFF88D682482}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net452", "net452", "{90403AFD-EEFD-4A07-91C9-E75B089C7072}"
+	ProjectSection(SolutionItems) = preProject
+		ThirdParty\Tracer\net452\TracerLibrary.dll = ThirdParty\Tracer\net452\TracerLibrary.dll
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,8 +28,8 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{54052FB7-B688-4D5C-9D1A-925F73629016}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{54052FB7-B688-4D5C-9D1A-925F73629016}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54052FB7-B688-4D5C-9D1A-925F73629016}.Debug|Any CPU.ActiveCfg = Release|Any CPU
+		{54052FB7-B688-4D5C-9D1A-925F73629016}.Debug|Any CPU.Build.0 = Release|Any CPU
 		{54052FB7-B688-4D5C-9D1A-925F73629016}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{54052FB7-B688-4D5C-9D1A-925F73629016}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A0281C25-460F-4ADE-8078-F00EFA85B041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -49,7 +51,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
-		{53667249-B00E-4731-9879-2F3EEEA0E0C4} = {132F8D89-1533-4FFD-A167-169347B53B46}
+		{4C1F7491-7C9E-4386-92D4-CFF88D682482} = {132F8D89-1533-4FFD-A167-169347B53B46}
+		{90403AFD-EEFD-4A07-91C9-E75B089C7072} = {4C1F7491-7C9E-4386-92D4-CFF88D682482}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5C087726-9F88-4707-BFAD-966BA323036D}

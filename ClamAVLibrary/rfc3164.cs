@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.RegularExpressions;
+using TracerLibrary;
 
 namespace ClamAVLibrary
 {
@@ -74,7 +75,7 @@ namespace ClamAVLibrary
                 }
                 catch (Exception e)
                 {
-                    log.Error(e.ToString());
+                    TraceInternal.TraceError(e.ToString());
                     _facility = FacilityType.Internally;
                     _severity = SeverityType.Critical;
                 }
@@ -97,10 +98,12 @@ namespace ClamAVLibrary
                 }
                 catch (Exception e)
                 {
-                    log.Error(e.ToString());
+                    TraceInternal.TraceError(e.ToString());
                     _timeStamp = DateTime.Now;
                     _hostName = Environment.MachineName;
                 }
+	            TraceInternal.TraceVerbose("timestamp='" + _timeStamp + "'");
+	            TraceInternal.TraceVerbose("hostname='" + _hostName + "'");
 
                 //Decode msg
 
@@ -127,23 +130,27 @@ namespace ClamAVLibrary
                 }
                 catch (Exception e)
                 {
-                    log.Debug(e.ToString());
-                    _tag = "Corral";
+                    TraceInternal.TraceVerbose(e.ToString());
+                    _tag = "";
                     _content = msg;
                 }
 
-                log.Debug("pri='" + pri + "'");
-                log.Debug("-> facility='" + _facility.ToString() + "'");
-                log.Debug("-> severity='" + _severity.ToString() + "'");
-                log.Debug("header='" + header + "'");
-                log.Debug("->timestamp='" + _timeStamp + "'");
-                log.Debug("->hostname='" + _hostName + "'");
-                log.Debug("msg='" + msg + "'");
-                log.Debug("-> tag='" + _tag + "'");
-                log.Debug("-> content='" + _content + "'");
+                TraceInternal.TraceVerbose("pri='" + pri + "'");
+                TraceInternal.TraceVerbose("-> facility='" + _facility.ToString() + "'");
+                TraceInternal.TraceVerbose("-> severity='" + _severity.ToString() + "'");
+                TraceInternal.TraceVerbose("header='" + header + "'");
+                TraceInternal.TraceVerbose("->timestamp='" + _timeStamp + "'");
+                TraceInternal.TraceVerbose("->hostname='" + _hostName + "'");
+                TraceInternal.TraceVerbose("msg='" + msg + "'");
+                TraceInternal.TraceVerbose("-> tag='" + _tag + "'");
+                TraceInternal.TraceVerbose("-> content='" + _content + "'");
             }
             return (parsed);
         }
+        #endregion
+        #region Properties
+        #endregion
+        #region Methods
 
         public override string ToString()
         {

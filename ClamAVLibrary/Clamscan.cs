@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,8 +13,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         #endregion
         #region Constructors
 
@@ -28,7 +26,7 @@ namespace ClamAVLibrary
 
         public ClamScan(string id, DataLocation location, string path)
         {
-            log.Debug("In ClamScan()");
+            Debug.WriteLine("In ClamScan()");
 
             _id = id;
             _execute = "clamscan.exe";
@@ -303,7 +301,7 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
 
              * 
              */
-            log.Debug("Out ClamScan()");
+            Debug.WriteLine("Out ClamScan()");
         }
 
         #endregion

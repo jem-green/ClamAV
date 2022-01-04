@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,8 +12,6 @@ namespace ClamAVLibrary
     public class ClamdScan : Component
     {
         #region Fields
-
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         #endregion
         #region Constructor
@@ -32,7 +30,7 @@ namespace ClamAVLibrary
 
         public ClamdScan(string id, DataLocation location, string path, int port)
         {
-            log.Debug("In ClamdScan()");
+            Debug.WriteLine("In ClamdScan()");
 
             _id = id;
             _execute = "clamdscan.exe";
@@ -230,7 +228,7 @@ namespace ClamAVLibrary
             _options.Add(new Option("fdpass"));
             _options.Add(new Option("stream"));
 
-            log.Debug("Out ClamdScan()");
+            Debug.WriteLine("Out ClamdScan()");
         }
 
         #endregion

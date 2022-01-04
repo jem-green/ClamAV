@@ -1,7 +1,8 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Globalization;
 using System.Threading;
+using System.Diagnostics;
 
 namespace ClamAVLibrary
 {
@@ -25,7 +26,6 @@ namespace ClamAVLibrary
 
         #endregion
         #region Fields
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
 
         /*
             <startdate format="dd-MMM-yyyy">10-feb-2019</startdate>
@@ -66,10 +66,10 @@ namespace ClamAVLibrary
 
         public Schedule()
         {
-            log.Debug("In Schedule()");
+            Debug.WriteLine("In Schedule()");
             _startDate = new DateTime();       //
             _startTime = new TimeSpan();       //
-            log.Debug("Out Schedule()");
+            Debug.WriteLine("Out Schedule()");
         }
 
         #endregion
@@ -246,7 +246,7 @@ namespace ClamAVLibrary
         /// </summary>
         public void Start()
         {
-            log.Debug("In Start()");
+            Debug.WriteLine("In Start()");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -263,7 +263,7 @@ namespace ClamAVLibrary
                     _thread.Start();
                 }
             }
-            log.Debug("Out Start()");
+            Debug.WriteLine("Out Start()");
         }
 
         /// <summary>
@@ -271,7 +271,7 @@ namespace ClamAVLibrary
         /// </summary>
         public void Stop()
         {
-            log.Debug("In Stop()");
+            Debug.WriteLine("In Stop()");
 
             if (_disposed)
                 throw new ObjectDisposedException(null, "This instance is already disposed");
@@ -291,7 +291,7 @@ namespace ClamAVLibrary
                     thread.Join();
                 }
             }
-            log.Debug("Out Stop()");
+            Debug.WriteLine("Out Stop()");
         }
 
         /// <summary>
@@ -305,7 +305,7 @@ namespace ClamAVLibrary
 
         protected virtual void Dispose(bool disposing)
         {
-            log.Debug("In Dispose()");
+            Debug.WriteLine("In Dispose()");
             if (!_disposed)
             {
                 if (disposing == true)
@@ -314,7 +314,7 @@ namespace ClamAVLibrary
                 }
                 _disposed = true;
             }
-            log.Debug("Out Dispose()");
+            Debug.WriteLine("Out Dispose()");
         }
 
         public static TimeoutUnit UnitLookup(string unitName)
@@ -384,9 +384,9 @@ namespace ClamAVLibrary
         /// </summary>
         private void Loop()
         {
-            log.Debug("In Loop()");
+            Debug.WriteLine("In Loop()");
 
-            log.Info("[" + _id + "] schedule at " + _timeout + " " + _units.ToString() + " interval starting on " + _startDate.ToString("dd/MM/yyyy") + " " + _startTime.ToString());
+            TraceInternal.TraceVerbose("[" + _id + "] schedule at " + _timeout + " " + _units.ToString() + " interval starting on " + _startDate.ToString("dd/MM/yyyy") + " " + _startTime.ToString());
 
             // process clamdscan at the defined intervals
 
@@ -428,19 +428,19 @@ namespace ClamAVLibrary
 
                 if (_running == true)
                 {
-                    log.Info("[" + _id + "] timeout");
+                    TraceInternal.TraceVerbose("[" + _id + "] timeout");
                     ScheduleEventArgs args = new ScheduleEventArgs(DateTime.Now);
                     OnScheduleTimeout(args);
                 }
             }
             while (_running == true);
 
-            log.Debug("Out Loop()");
+            Debug.WriteLine("Out Loop()");
         }
 
         private static long TimeConvert(TimeoutUnit schedule, long timeout)
         {
-            log.Debug("In TimeConvert()");
+            Debug.WriteLine("In TimeConvert()");
             long seconds = timeout;
 
             // convert to seconds
@@ -468,7 +468,7 @@ namespace ClamAVLibrary
                     }
                     break;
             }
-            log.Debug("Out TimeConvert()");
+            Debug.WriteLine("Out TimeConvert()");
             return (seconds);
         }
 

@@ -1,4 +1,4 @@
-﻿using log4net;
+﻿using TracerLibrary;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -13,8 +13,6 @@ namespace ClamAVLibrary
     {
         #region Fields
 
-        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         #endregion
         #region Constructors
 
@@ -28,7 +26,7 @@ namespace ClamAVLibrary
 
         public Clamd(DataLocation location, int port)
         {
-            log.Debug("In Clamd()");
+            Debug.WriteLine("In Clamd()");
             _execute = "clamd.exe";
             if (port != 0)
             {
@@ -206,7 +204,7 @@ namespace ClamAVLibrary
             _options.Add(new Option("debug"));
             _options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.text));
 
-            log.Debug("Out Clamd()");
+            Debug.WriteLine("Out Clamd()");
         }
 
         #endregion
