@@ -1,12 +1,19 @@
-﻿namespace ClamAVLibrary
+﻿//  Copyright (c) 2017, Jeremy Green All rights reserved.
+
+using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace ClamAVLibrary
 {
-    public class Parameter
+    public class Parameter<T>
     {
         #region Fields
-        object _value;
-        SourceType source = SourceType.None;
 
-        public enum SourceType
+        T _value = default(T);
+        SourceType _source = SourceType.None;
+
+        public enum SourceType: int
         {
             None = 0,
             Command = 1,
@@ -16,19 +23,24 @@
 
         #endregion
         #region Constructor
-        public Parameter(string value)
+        public Parameter()
         {
-            this._value = value;
-            source = SourceType.None;
+            this._value = typeof(T) == typeof(string) ? (T)(object)string.Empty : default(T);
         }
-        public Parameter(string value, SourceType source)
+
+        public Parameter(T value)
         {
             this._value = value;
-            this.source = source;
+            _source = SourceType.App;
+        }
+        public Parameter(T value, SourceType source)
+        {
+            _value = value;
+            this._source = source;
         }
         #endregion
         #region Parameters
-        public object Value
+        public T Value
         {
             set
             {
@@ -44,18 +56,18 @@
         {
             set
             {
-                source = value;
+                _source = value;
             }
             get
             {
-                return (source);
+                return (_source);
             }
         }
         #endregion
         #region Methods
         public override string ToString()
         {
-            return (_value.ToString());
+            return (Convert.ToString(_value));
         }
         #endregion
     }

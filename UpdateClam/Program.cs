@@ -505,5 +505,7 @@ namespace UpdateClam
 
             return result.ToString();
         }
+        
+        #endregion
     }
 }
