@@ -64,8 +64,7 @@ namespace UpdateClam
 
         #endregion
         #region Private
-
-        static bool ValidateArguments(string[] args)
+        private static bool ValidateArguments(string[] args)
         {
             // Passed args allow for changes to web address and application location
 
@@ -92,7 +91,7 @@ namespace UpdateClam
             }
         }
 
-        static string Usage()
+        private static string Usage()
         {
             string usage = "";
             usage =  "                       Clam AntiVirus: Application Updater 0.2.0\n";
@@ -111,7 +110,7 @@ namespace UpdateClam
             return (usage);
         }
 
-        static void PreProcess(string[] args)
+        private static void PreProcess(string[] args)
         {
             // Assume that updater is located in the same location as clamd, freshclam etc.
             _appdir = System.Reflection.Assembly.GetExecutingAssembly().Location;
@@ -178,7 +177,7 @@ namespace UpdateClam
             _readInput = false; // Indicate that we don't need to do a read input
         }
 
-        static int PostProcess()
+        private static int PostProcess()
         {
             int errorCode = -1;
 
@@ -463,7 +462,7 @@ namespace UpdateClam
             }
         }
 
-        static string ParseUri(string host, string path, string query)
+        private static string ParseUri(string host, string path, string query)
         {
             string uri = "";
 
@@ -484,7 +483,7 @@ namespace UpdateClam
             return (uri);
         }
 
-        static  string ParseQuery(string query)
+        private static string ParseQuery(string query)
         {
             // ideal key=value&key=value
             // problem key=part & part&key=value  -- dosent split well
@@ -527,7 +526,7 @@ namespace UpdateClam
         /// </summary>
         /// <param name="value">The value to Url encode</param>
         /// <returns>Returns a Url encoded string</returns>
-        static string UrlEncode(string value)
+        private static string UrlEncode(string value)
         {
             StringBuilder result = new StringBuilder();
 
@@ -545,7 +544,5 @@ namespace UpdateClam
 
             return result.ToString();
         }
-        
-        #endregion
     }
 }
