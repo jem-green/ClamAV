@@ -124,7 +124,7 @@ namespace ClamAVLibrary
         }
 
         /// <summary>
-        /// Send out the notifiction
+        /// Send out the notification
         /// </summary>
         /// <returns></returns>
         public int Notify(string applicationName, string eventName, string description, PriorityOrder priority)
@@ -138,7 +138,7 @@ namespace ClamAVLibrary
             TraceInternal.TraceVerbose("Priority=" + priority);
             ErrorCode error = ErrorCode.None;
 
-            // Translate priority into severyity
+            // Translate priority into severity
 
             Message.SeverityType severity = Message.SeverityType.Null;
             switch (priority)
@@ -170,7 +170,7 @@ namespace ClamAVLibrary
                     }
             }
 
-            // Syslog doesnt use priority as this is a combination of sevirty and facility
+            // Syslog doesn't use priority as this is a combination of severity and facility
 
             Rfc3164 message = new Rfc3164
             {
@@ -214,7 +214,6 @@ namespace ClamAVLibrary
                 // Make sure the final buffer is less then 4096 bytes and if so then send the data
                 if (output.Length < 4096)
                 {
-
                     int sent = sendSocket.Send(output, output.Length);
                     sendSocket.Close();
                     if (sent <= 0)
@@ -245,7 +244,7 @@ namespace ClamAVLibrary
         }
 
         /// <summary>
-        /// Verifiy the API key
+        /// Verify the API key
         /// </summary>
         /// <returns></returns>
         public int Verify()

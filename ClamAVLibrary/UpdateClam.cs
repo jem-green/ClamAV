@@ -33,13 +33,15 @@ namespace ClamAVLibrary
 
             _schedule = new Schedule();
             _schedule.Date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
-            _schedule.Time = new TimeSpan(_schedule.Date.Hour, _schedule.Date.Minute, _schedule.Date.Second); string basePath = "";
-
+            _schedule.Time = new TimeSpan(_schedule.Date.Hour, _schedule.Date.Minute, _schedule.Date.Second);
+            
+            string basePath = "";
+            string name = "clamav";
             switch (location)
             {
                 case DataLocation.App:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);
@@ -55,7 +57,7 @@ namespace ClamAVLibrary
                     }
                 case DataLocation.Local:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);
@@ -64,7 +66,7 @@ namespace ClamAVLibrary
                     }
                 case DataLocation.Roaming:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);
@@ -85,7 +87,7 @@ namespace ClamAVLibrary
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "updateclam.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "updateclam.conf";
 
-            // Not sure about the hardcoding here
+            // Not sure about the hard coding here
 
             _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 

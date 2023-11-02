@@ -24,6 +24,7 @@ namespace UpdateClam
         static bool _downloaded = false;
         static Progress _progress;
         static bool _showProgress = false;
+        static bool _help = false;
 
         #endregion
         #region Methods
@@ -32,26 +33,29 @@ namespace UpdateClam
             // Read in specific configuration
 
             Debug.WriteLine("Enter Main()");
-            int errorCode = -1;
+            int errorCode = -2;
 
-            if (ValidateArguments(args))
+            if (args.Length > 0)
             {
-                PreProcess(args);
-                if (_readInput)
+                if (ValidateArguments(args))
                 {
-                    string currentLine = Console.In.ReadLine();
-                    while (currentLine != null)
+                    PreProcess(args);
+                    if (_readInput)
                     {
-                        //ProcessLine(currentLine);
-                        currentLine = Console.In.ReadLine();
+                        string currentLine = Console.In.ReadLine();
+                        while (currentLine != null)
+                        {
+                            //ProcessLine(currentLine);
+                            currentLine = Console.In.ReadLine();
+                        }
                     }
+                    errorCode = PostProcess();
                 }
-                errorCode = PostProcess();
-            }
-            else
-            {
-                Console.Error.Write(Usage());
-                errorCode = -1;
+                else
+                {
+                    Console.Error.Write(Usage());
+                    errorCode = -1;
+                }
             }
 
             Debug.WriteLine("Exit Main()");
@@ -65,8 +69,6 @@ namespace UpdateClam
         {
             // Passed args allow for changes to web address and application location
 
-            bool help = false;
-
             foreach (string arg in args)
             {
                 switch (arg)
@@ -74,13 +76,13 @@ namespace UpdateClam
                     case "-h":
                     case "--help":
                         {
-                            help = true;
+                            _help = true;
                             break;
                         }
                 }
             }
             
-            if (help == false)
+            if (_help == false)
             {
                 return (true);
             }
@@ -102,8 +104,8 @@ namespace UpdateClam
             usage += "    --force                -f         Force the update\n";
             usage += "    --help                 -h         Show this help\n";
             usage += "    --progress             -p         Show progress\n";
-            usage += "    --appdir=DIRECTORY                Install new application into DIRECTORY";
-            usage += "    --tempdir=DIRECTORY               Download installer into DIRECTORY";
+            usage += "    --appdir=DIRECTORY                Install new application into DIRECTORY\n";
+            usage += "    --tempdir=DIRECTORY               Download installer into DIRECTORY\n";
             usage += "\n";
             usage += "\n";
             return (usage);
@@ -114,14 +116,30 @@ namespace UpdateClam
             // Assume that updater is located in the same location as clamd, freshclam etc.
             _appdir = System.Reflection.Assembly.GetExecutingAssembly().Location;
             int pos = _appdir.LastIndexOf('\\');
-            _appdir = _appdir.Substring(0, pos);
+            if (pos > 0)
+            {
+                _appdir = _appdir.Substring(0, pos);
+            }
 
-            _tempdir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+            // Set the tempdir to c:\users\user\local\clamav
+            string name = "clamav";
+            _tempdir = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
+
+            // Override the DIRECTORY from the command line
 
             for (int item = 0; item < args.Length; item++)
             {
                 string argument = args[item];
-                if (argument.Length > 9)
+                if (argument.Length > 10)
+                {
+                    if (argument.Substring(0, 10) == "--tempdir=")
+                    {
+                        _tempdir = argument.Substring(9, argument.Length - 10);
+                        _tempdir = _tempdir.TrimStart('"');
+                        _tempdir = _tempdir.TrimEnd('"');
+                    }
+                }
+                else if (argument.Length > 9)
                 {
                     if (argument.Substring(0, 9) == "--appdir=")
                     {
@@ -129,19 +147,9 @@ namespace UpdateClam
                         _appdir = _appdir.TrimStart('"');
                         _appdir = _appdir.TrimEnd('"');
                     }
-
-                    if (argument.Substring(0, 10) == "--progress")
+                    else if (argument.Substring(0, 10) == "--progress")
                     {
                         _showProgress = true;
-                    }
-                }
-                else if (argument.Length > 10)
-                {
-                    if (argument.Substring(0, 10) == "--tempdir=")
-                    {
-                        _tempdir = argument.Substring(9, argument.Length - 10);
-                        _tempdir = _tempdir.TrimStart('"');
-                        _tempdir = _tempdir.TrimEnd('"');
                     }
                 }
                 else if (argument.Length > 6)
@@ -151,8 +159,23 @@ namespace UpdateClam
                         _update = true;
                     }
                 }
+                else if (argument.Length == 2)
+                {
+                    if (argument.Substring(0, 2) == "-f")
+                    {
+                        _update = true;
+                    }
+                    else if (argument.Substring(0, 2) == "-h")
+                    {
+                        _help = true;
+                    }
+                    else if (argument.Substring(0, 2) == "-p")
+                    {
+                        _showProgress = true;
+                    }
+                }
             }
-            _readInput = false; // Indcate that we dont need to do a read input
+            _readInput = false; // Indicate that we don't need to do a read input
         }
 
         static int PostProcess()
@@ -162,7 +185,8 @@ namespace UpdateClam
             string _filename = "clamd.exe";
             string host = "https://www.clamav.net";
             string path = "/downloads/";
-            string search = "The latest stable release is\n            <strong>";
+            //string search = "click here</a>.</em></p>\r\n      </div>\r\n          <h3><strong>";
+            string search = "click here</a>.</em></p>\n      </div>\n          <h3><strong>";
             string query = "";
             string data = "";
             string uri;
@@ -201,197 +225,213 @@ namespace UpdateClam
                 // Search for the version
 
                 int pos = data.IndexOf(search);
-                int next = data.IndexOf(" </strong>", pos);
-                search = data.Substring(pos + search.Length, next - pos - search.Length);
-
-                // Need to decide if an update is needed so need to have the current build
-                // so check the version of _filename (clamd)
-
-                string fileNamePath = Path.Combine(_appdir, _filename);
-                string fileVersion = "";
-                try
+                if (pos > 0)
                 {
-                    if (File.Exists(fileNamePath) == true)
+                    int next = data.IndexOf("</strong>", pos);
+                    if (next > 0)
                     {
-                        FileVersionInfo currentVersion = FileVersionInfo.GetVersionInfo(fileNamePath);
-                        fileVersion = currentVersion.FileVersion.Trim();
-                        if (fileVersion.Length == 0)
-                        {
-                            fileVersion = currentVersion.ProductVersion.Trim();
-                        }
+                        search = data.Substring(pos + search.Length, next - pos - search.Length);
                     }
+                }
 
-                    if ((fileVersion != search) || (_update == true))
+                if (search.Length > 0)
+                { 
+
+                    // Need to decide if an update is needed so need to have the current build
+                    // so check the version of _filename (clamd)
+
+                    string fileNamePath = Path.Combine(_appdir, _filename);
+                    string fileVersion = "";
+                    try
                     {
-                        Console.Error.WriteLine("Clamav(" + fileVersion + ") update available " + search);
-                        Console.WriteLine("Application may prevent updates so issue PAUSE");
-
-                        // Download
-
-                        string platform = ".win.x64";
-                        string extension = ".zip";
-                        string installer = "clamav-" + search + platform + extension;
-  
-                        path = "/downloads/production/" + installer;
-                        uri = ParseUri(host, path, query);
-
-                        //https://www.clamav.net/downloads/production/clamav-0.104.0.win.x64.msi
-
-                        try
+                        if (File.Exists(fileNamePath) == true)
                         {
-                            if (!Directory.Exists(_tempdir))
+                            FileVersionInfo currentVersion = FileVersionInfo.GetVersionInfo(fileNamePath);
+                            fileVersion = currentVersion.FileVersion.Trim();
+                            if (fileVersion.Length == 0)
                             {
-                                Directory.CreateDirectory(_tempdir);
+                                fileVersion = currentVersion.ProductVersion.Trim();
                             }
+                        }
 
-                            fileNamePath = Path.Combine(_tempdir, installer);
-                            if (File.Exists(fileNamePath) == true)
-                            {
-                                File.Delete(fileNamePath);
-                            }
+                        if ((fileVersion != search) || (_update == true))
+                        {
+                            Console.Error.WriteLine("Clamav(" + fileVersion + ") update available " + search);
+                            Console.WriteLine("Application may prevent updates so issue PAUSE");
+
+                            // Download
+
+                            string platform = ".win.x64";
+                            string extension = ".zip";
+                            string installer = "clamav-" + search + platform + extension;
+
+                            path = "/downloads/production/" + installer;
+                            uri = ParseUri(host, path, query);
+
+                            //https://www.clamav.net/downloads/production/clamav-0.104.0.win.x64.msi
 
                             try
                             {
+                                if (!Directory.Exists(_tempdir))
+                                {
+                                    Directory.CreateDirectory(_tempdir);
+                                }
 
-                                // Download the file - see if we can show progresss.
+                                fileNamePath = Path.Combine(_tempdir, installer);
+                                if (File.Exists(fileNamePath) == true)
+                                {
+                                    File.Delete(fileNamePath);
+                                }
 
-                                _downloaded = false;
-                                _progress = new Progress(0, 100);
                                 try
                                 {
 
-                                    using (WebClient client = new WebClient())
-                                    {
-                                        client.Headers.Add("User-Agent", "updateclient");
-                                        Console.Error.WriteLine("Download " + uri);
-                                        Console.Error.WriteLine("Temporary location " + fileNamePath);
-                                        if (_showProgress == true)
-                                        {
-                                            client.DownloadFileAsync(new Uri(uri), fileNamePath);
-                                            client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
-                                        }
-                                        else
-                                        {
-                                            client.DownloadFile(uri, fileNamePath);
-                                            _downloaded = true;
-                                        }
-                                    }
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.Error.WriteLine(e.ToString());
-                                }
+                                    // Download the file - see if we can show progresss.
 
-                                if (_showProgress == true)
-                                {
-                                    _progress.Width = 80;
-                                    _progress.Change = Progress.ChangeType.position;
-                                    _progress.Visible = true;
-                                    Console.CursorVisible = false;
-                                    Console.CursorLeft = 0;
-                                }
-
-                                do
-                                {
-                                    Thread.Sleep(1000);
-                                }
-                                while (_downloaded == false);
-         
-
-                                try
-                                {
-                                    // now need to install the downloaded exe
-
-                                    Process proc;
-
-                                    // Enable process to be killed if still running from stop
-
-                                    proc = new System.Diagnostics.Process();
-
-                                    ProcessStartInfo startInfo = new ProcessStartInfo();
-
-                                    startInfo.FileName = "unzip.exe";
-                                    startInfo.Arguments = "-q -o -j \"" + fileNamePath + "\" \"*.exe\" \"*.dll\" -d \"" + _appdir + "\"";
-                                    startInfo.CreateNoWindow = true;
-                                    startInfo.UseShellExecute = true;
-
-                                    // Enable exit event to be raised
-
-                                    proc.EnableRaisingEvents = true;
-                                    proc.StartInfo = startInfo;
+                                    _downloaded = false;
+                                    _progress = new Progress(0, 100);
                                     try
                                     {
-                                        Console.Error.WriteLine("Unpack " + fileNamePath);
-                                        proc.Start();
-                                        Console.WriteLine(startInfo.FileName + " " + startInfo.Arguments);
 
-                                        proc.WaitForExit();
-                                        Console.Error.WriteLine("Finished unpacking");
-                                        Console.WriteLine("Update complete so issue RESUME");
-                                        errorCode = 0;
-
-                                        if (File.Exists(fileNamePath) == true)
+                                        using (WebClient client = new WebClient())
                                         {
-                                            try
+                                            client.Headers.Add("User-Agent", "updateclient");
+                                            Console.Error.WriteLine("Download " + uri);
+                                            Console.Error.WriteLine("Temporary location " + fileNamePath);
+                                            if (_showProgress == true)
                                             {
-                                                Console.Error.WriteLine("Cleanup and delete " + fileNamePath);
-                                                File.Delete(fileNamePath);
+                                                client.DownloadFileAsync(new Uri(uri), fileNamePath);
+                                                client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgressCallback);
                                             }
-                                            catch (Exception)
+                                            else
                                             {
-                                                Console.Error.WriteLine("Could not delete " + fileNamePath);
+                                                client.DownloadFile(uri, fileNamePath);
+                                                _downloaded = true;
                                             }
                                         }
                                     }
                                     catch (Exception e)
                                     {
-                                        errorCode = 7;
-                                        Console.Error.WriteLine("Exception " + e.Message);
+                                        errorCode = 9;
+                                        Console.Error.WriteLine("Cannot download file");
                                     }
 
-                                    proc.Dispose();
-                                    proc = null;
-                                }
-                                catch (Exception pe)
-                                {
-                                    errorCode = 6;
-                                    Console.Error.WriteLine("Exception " + pe.Message);
-                                }
+                                    if (_showProgress == true)
+                                    {
+                                        _progress.Width = 80;
+                                        _progress.Change = Progress.ChangeType.position;
+                                        _progress.Visible = true;
+                                        Console.CursorVisible = false;
+                                        Console.CursorLeft = 0;
+                                    }
 
+                                    do
+                                    {
+                                        Thread.Sleep(1000);
+                                    }
+                                    while (_downloaded == false);
+
+
+                                    try
+                                    {
+                                        // now need to install the downloaded exe
+
+                                        Process proc;
+
+                                        // Enable process to be killed if still running from stop
+
+                                        proc = new System.Diagnostics.Process();
+
+                                        ProcessStartInfo startInfo = new ProcessStartInfo();
+
+                                        startInfo.FileName = "unzip.exe";
+                                        startInfo.Arguments = "-q -o -j \"" + fileNamePath + "\" \"*.exe\" \"*.dll\" -d \"" + _appdir + "\"";
+                                        startInfo.CreateNoWindow = true;
+                                        startInfo.UseShellExecute = true;
+
+                                        // Enable exit event to be raised
+
+                                        proc.EnableRaisingEvents = true;
+                                        proc.StartInfo = startInfo;
+                                        try
+                                        {
+                                            Console.Error.WriteLine("Unpack " + fileNamePath);
+                                            proc.Start();
+                                            Console.WriteLine(startInfo.FileName + " " + startInfo.Arguments);
+
+                                            proc.WaitForExit();
+                                            Console.Error.WriteLine("Finished unpacking");
+                                            Console.WriteLine("Update complete so issue RESUME");
+                                            errorCode = 0;
+
+                                            if (File.Exists(fileNamePath) == true)
+                                            {
+                                                try
+                                                {
+                                                    Console.Error.WriteLine("Cleanup and delete " + fileNamePath);
+                                                    File.Delete(fileNamePath);
+                                                }
+                                                catch (Exception)
+                                                {
+                                                    Console.Error.WriteLine("Could not delete " + fileNamePath);
+                                                }
+                                            }
+                                        }
+                                        catch (Exception e)
+                                        {
+                                            errorCode = 7;
+                                            Console.Error.WriteLine("Exception " + e.Message);
+                                        }
+
+                                        proc.Dispose();
+                                        proc = null;
+                                    }
+                                    catch (Exception pe)
+                                    {
+                                        errorCode = 6;
+                                        Console.Error.WriteLine("Exception " + pe.Message);
+                                    }
+
+                                }
+                                catch (WebException iwe)
+                                {
+                                    errorCode = 4;
+                                    Console.Error.WriteLine("Could not download package from " + uri);
+                                    Console.Error.WriteLine("Web Exception " + iwe.ToString());
+                                }
+                                catch (Exception ce)
+                                {
+                                    errorCode = 5;
+                                    Console.Error.WriteLine("Exception " + ce.Message);
+                                }
                             }
-                            catch (WebException iwe)
+                            catch (Exception)
                             {
-                                errorCode = 4;
-                                Console.Error.WriteLine("Could not download package from " + uri);
-                                Console.Error.WriteLine("Web Exception " + iwe.ToString());
-                            }
-                            catch (Exception ce)
-                            {
-                                errorCode = 5;
-                                Console.Error.WriteLine("Exception " + ce.Message);
+                                errorCode = 6;
+                                Console.Error.WriteLine("Could not delete " + fileNamePath);
                             }
                         }
-                        catch (Exception)
+                        else
                         {
-                            errorCode = 6;
-                            Console.Error.WriteLine("Could not delete " + fileNamePath);
+                            Console.Error.WriteLine("Clamav(" + fileVersion + ") is current");
+                            errorCode = 0;
                         }
                     }
-                    else
+                    catch (FileNotFoundException)
                     {
-                        Console.Error.WriteLine("Clamav(" + fileVersion + ") is current");
-                        errorCode = 0;
+                        errorCode = 2;
+                        Console.Error.WriteLine("File not found " + fileNamePath);
+                    }
+                    catch (Exception ex)
+                    {
+                        errorCode = 3;
+                        Console.Error.WriteLine("Exception " + ex.Message);
                     }
                 }
-                catch (FileNotFoundException)
+                else
                 {
-                    errorCode = 2;
-                    Console.Error.WriteLine("File not found " + fileNamePath);
-                }
-                catch (Exception ex)
-                {
-                    errorCode = 3;
-                    Console.Error.WriteLine("Exception " + ex.Message);
+                    errorCode = 10;
+                    Console.Error.WriteLine("Version not found");
                 }
             }
             catch (WebException we)

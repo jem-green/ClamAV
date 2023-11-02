@@ -208,7 +208,7 @@ namespace ClamAVConsole
                 Trace.TraceError(e.ToString());
             }
 
-            // Check if the config file has been paased in and overwrite the registry
+            // Check if the config file has been passed in and overwrite the registry
 
             int items = args.Length;
             for (int item = 0; item <items; item++)
@@ -281,7 +281,7 @@ namespace ClamAVConsole
             TraceInternal.TraceInformation("Use Log Name=" + logName.Value);
             TraceInternal.TraceInformation("Use Log Path=" + logPath.Value);
 
-            // finally use the xml file.
+            // finally use the XML file.
 
             Serialise serialise = new Serialise();
 			if (appPath.Value.ToString().Length > 0)
