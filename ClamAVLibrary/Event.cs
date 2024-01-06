@@ -1,4 +1,7 @@
-﻿namespace ClamAVLibrary
+﻿using System;
+using System.Diagnostics;
+
+namespace ClamAVLibrary
 {
     public class Event
     {
@@ -8,6 +11,7 @@
         string _name = "";
         EventLevel _eventLevel;
         string _eventDescription = "";
+        object _eventData;
 
         //Log levels 
 
@@ -38,8 +42,25 @@
             _eventLevel = level;
         }
 
+        public Event(string name, string application, string description, object data)
+        {
+            _name = name;
+            _application = application;
+            _eventDescription = description;
+            _eventData = data;
+        }
+
+        public Event(string name, string application, string description, EventLevel level, object data)
+        {
+            _name = name;
+            _application = application;
+            _eventDescription = description;
+            _eventLevel = level;
+            _eventData = data;
+        }
+
         #endregion
-        #region Proprties
+        #region Properties
 
         public string Application
         {
@@ -89,8 +110,94 @@
             }
         }
 
+        public object Data
+        {
+            set
+            {
+                _eventData = value;
+            }
+            get
+            {
+                return (_eventData);
+            }
+        }
+
         #endregion
+        public EventLevel EventLookup(string eventLevelName)
+        {
+
+            EventLevel eventLevel = EventLevel.Emergency;
+
+            if (Int32.TryParse(eventLevelName, out int severtyValue))
+            {
+                eventLevel = (EventLevel)severtyValue;
+            }
+            else
+            {
+                string lookup = eventLevelName;
+                if (eventLevelName.Length > 1)
+                {
+                    lookup = eventLevelName.ToUpper();
+                }
+
+                switch (lookup)
+                {
+                    case "A":
+                    case "ALERT":
+                        {
+                            eventLevel = EventLevel.Alert;
+                            break;
+                        }
+                    case "C":
+                    case "CRIT":
+                    case "CRITICAL":
+                        {
+                            eventLevel = EventLevel.Critical;
+                            break;
+                        }
+                    case "E":
+                    case "EMERG":
+                    case "EMERGENCY":
+                        {
+                            eventLevel = EventLevel.Emergency;
+                            break;
+                        }
+                    case "e":
+                    case "ERR":
+                    case "ERROR":
+                        {
+                            eventLevel = EventLevel.Error;
+                            break;
+                        }
+                    case "I":
+                    case "INFO":
+                    case "INFORMATIONAL":
+                        {
+                            eventLevel = EventLevel.Information;
+                            break;
+                        }
+                    case "N":
+                    case "NOTICE":
+                        {
+                            eventLevel = EventLevel.Notification;
+                            break;
+                        }
+                    case "W":
+                    case "WARN":
+                    case "WARNING":
+                        {
+                            eventLevel = EventLevel.Warning;
+                            break;
+                        }
+                }
+            }
+            return (eventLevel);
+
+        }
         #region Methods
+
+
+
         #endregion
     }
 }

@@ -243,7 +243,7 @@ namespace ClamAVService
             TraceInternal.TraceInformation("Use Log Name=" + logName.Value);
             TraceInternal.TraceInformation("Use Log Path=" + logPath.Value);
             
-            // finally use the xml file.
+            // finally use the XML file.
 
             Serialise serialise = new Serialise();
             if (appPath.Value.ToString().Length > 0)

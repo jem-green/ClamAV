@@ -7,7 +7,7 @@ using System.Xml;
 namespace ClamAVLibrary
 {
     /// <summary>
-    /// Serialise and deserialise confguration data
+    /// Serialise and deserialise configuration data
     /// </summary>
     public class Serialise
     {
@@ -238,7 +238,7 @@ namespace ClamAVLibrary
 
                                                     if (mode == Component.OperatingMode.Combined)
                                                     {
-                                                        // Laumch ClamScan
+                                                        // Launch ClamScan
                                                         scan = new ClamScan(id, location);
                                                         scan.Mode = mode;
                                                     }

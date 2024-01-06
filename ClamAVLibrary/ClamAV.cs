@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Threading;
 using System.Diagnostics;
+using static ClamAVLibrary.Component;
 
 namespace ClamAVLibrary
 {
@@ -414,6 +415,12 @@ namespace ClamAVLibrary
                     case "PROGRAMEDATA":
                         {
                             dataLocation = Component.DataLocation.App;
+                            break;
+                        }
+                    case "C":
+                    case "CUSTOM":
+                        {
+                            dataLocation = DataLocation.Custom;
                             break;
                         }
                     case "L":

@@ -174,7 +174,7 @@ namespace ClamAVLibrary
 
             Rfc3164 message = new Rfc3164
             {
-                Severity = _severity,
+                Severity = severity,
                 Facility = _facility,
                 HostName = System.Environment.MachineName.ToUpper()
             };
@@ -182,7 +182,7 @@ namespace ClamAVLibrary
             string tag;
             try
             {
-                tag = string.Format("{0}[{1}]", eventName, applicationName);
+                tag = string.Format("{0}[{1}]", applicationName,eventName);
 
                 if (tag.Length > 32)
                 {

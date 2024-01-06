@@ -238,10 +238,12 @@ namespace ClamAVLibrary
 
         public enum DataLocation : int
         {
+            None = -1,
             Program = 0,
             App = 1,
             Local = 2,
-            Roaming = 3
+            Roaming = 3,
+            Custom = 4
         }
 
         #endregion
