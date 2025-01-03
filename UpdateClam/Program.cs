@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
@@ -25,6 +27,7 @@ namespace UpdateClam
         static Progress _progress;
         static bool _showProgress = false;
         static bool _help = false;
+        static bool _version = false;
 
         #endregion
         #region Methods
@@ -40,16 +43,24 @@ namespace UpdateClam
                 if (ValidateArguments(args))
                 {
                     PreProcess(args);
-                    if (_readInput)
+                    if (_version)
                     {
-                        string currentLine = Console.In.ReadLine();
-                        while (currentLine != null)
-                        {
-                            //ProcessLine(currentLine);
-                            currentLine = Console.In.ReadLine();
-                        }
+                        Console.WriteLine("updateclam " + Assembly.GetExecutingAssembly().GetName().Version.ToString());
+                        errorCode = 0;
                     }
-                    errorCode = PostProcess();
+                    else
+                    {
+                        if (_readInput)
+                        {
+                            string currentLine = Console.In.ReadLine();
+                            while (currentLine != null)
+                            {
+                                //ProcessLine(currentLine);
+                                currentLine = Console.In.ReadLine();
+                            }
+                        }
+                        errorCode = PostProcess();
+                    }
                 }
                 else
                 {
@@ -94,14 +105,15 @@ namespace UpdateClam
         private static string Usage()
         {
             string usage = "";
-            usage =  "                       Clam AntiVirus: Application Updater 0.2.0\n";
+            usage =  "                       Clam AntiVirus: Application Updater " + Assembly.GetExecutingAssembly().GetName().Version.ToString() + "\n";
             usage += "           By The Green Team: https://www.32high.co.uk\n";
             usage += "           (C) 2020 32High\n";
             usage += "\n";
             usage += "    clamupdate [options]\n";
             usage += "\n";
-            usage += "    --force                -f         Force the update\n";
             usage += "    --help                 -h         Show this help\n";
+            usage += "    --version              -V         SHow the version number\n";
+            usage += "    --force                -f         Force the update\n";
             usage += "    --progress             -p         Show progress\n";
             usage += "    --appdir=DIRECTORY                Install new application into DIRECTORY\n";
             usage += "    --tempdir=DIRECTORY               Download installer into DIRECTORY\n";
@@ -151,6 +163,13 @@ namespace UpdateClam
                         _showProgress = true;
                     }
                 }
+                else if (argument.Length > 8)
+                {
+                    if (argument.Substring(0, 9) == "--version")
+                    {
+                        _version = true;
+                    }
+                }
                 else if (argument.Length > 6)
                 {
                     if (argument.Substring(0, 7) == "--force")
@@ -172,6 +191,10 @@ namespace UpdateClam
                     {
                         _showProgress = true;
                     }
+                    else if (argument.Substring(0, 2) == "-V")
+                    {
+                        _version = true;
+                    }
                 }
             }
             _readInput = false; // Indicate that we don't need to do a read input
@@ -181,7 +204,7 @@ namespace UpdateClam
         {
             int errorCode = -1;
 
-            string _filename = "clamd.exe";
+            string filename = "clamd.exe";
             string host = "https://www.clamav.net";
             string path = "/downloads/";
             //string search = "click here</a>.</em></p>\r\n      </div>\r\n          <h3><strong>";
@@ -239,7 +262,7 @@ namespace UpdateClam
                     // Need to decide if an update is needed so need to have the current build
                     // so check the version of _filename (clamd)
 
-                    string fileNamePath = Path.Combine(_appdir, _filename);
+                    string fileNamePath = Path.Combine(_appdir, filename);
                     string fileVersion = "";
                     try
                     {
@@ -285,7 +308,7 @@ namespace UpdateClam
                                 try
                                 {
 
-                                    // Download the file - see if we can show progresss.
+                                    // Download the file - see if we can show progress.
 
                                     _downloaded = false;
                                     _progress = new Progress(0, 100);
@@ -330,6 +353,10 @@ namespace UpdateClam
                                     }
                                     while (_downloaded == false);
 
+                                    if (_showProgress == true)
+                                    {
+                                        Console.WriteLine("");
+                                    }
 
                                     try
                                     {
@@ -344,7 +371,12 @@ namespace UpdateClam
                                         ProcessStartInfo startInfo = new ProcessStartInfo();
 
                                         startInfo.FileName = "unzip.exe";
-                                        startInfo.Arguments = "-q -o -j \"" + fileNamePath + "\" \"*.exe\" \"*.dll\" -d \"" + _appdir + "\"";
+                                        startInfo.Arguments = " -q";
+                                        startInfo.Arguments = startInfo.Arguments + " -o";
+                                        startInfo.Arguments = startInfo.Arguments + " -j \"" + fileNamePath + "\"";
+                                        startInfo.Arguments = startInfo.Arguments + " \"*.exe\"";
+                                        startInfo.Arguments = startInfo.Arguments + " \"*.dll\"";
+                                        startInfo.Arguments = startInfo.Arguments + " -d \"" + _appdir + "\"";
                                         startInfo.CreateNoWindow = true;
                                         startInfo.UseShellExecute = true;
 
@@ -352,11 +384,12 @@ namespace UpdateClam
 
                                         proc.EnableRaisingEvents = true;
                                         proc.StartInfo = startInfo;
+
                                         try
                                         {
                                             Console.Error.WriteLine("Unpack " + fileNamePath);
-                                            proc.Start();
                                             Console.WriteLine(startInfo.FileName + " " + startInfo.Arguments);
+                                            proc.Start();
 
                                             proc.WaitForExit();
                                             Console.Error.WriteLine("Finished unpacking");

@@ -60,7 +60,11 @@ namespace ClamAVLibrary
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
-                        basePath = basePath.Substring(0, pos);
+                        basePath = basePath.Substring(0, pos) + System.IO.Path.DirectorySeparatorChar + name;
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
                         break;
                     }
                 case DataLocation.Local:
@@ -94,178 +98,74 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamscan.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamscan.conf";
-            _executePath = basePath + System.IO.Path.DirectorySeparatorChar + _execute;
+
+            // Not sure about the hard-coding here
+
+            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
-            //_settings.Add(new Setting("AlgorithmicDetection", null));
-            //_settings.Add(new Setting("AllowAllMatchScan", null));
-            //_settings.Add(new Setting("AllowSupplementaryGroups", null));
-            //_settings.Add(new Setting("ArchiveBlockEncrypted", null));
-            //_settings.Add(new Setting("Bytecode", null));
-            //_settings.Add(new Setting("BytecodeSecurity", null));
-            //_settings.Add(new Setting("BytecodeTimeout", null));
-            //_settings.Add(new Setting("CommandReadTimeout", null));
-            //_settings.Add(new Setting("CrossFilesystems", null));
-            //_settings.Add(new Setting("DatabaseDirectory", null));
-            //_settings.Add(new Setting("Debug", null));
-            //_settings.Add(new Setting("DetectBrokenExecutables", null));
-            //_settings.Add(new Setting("DetectPUA", null));
-            //_settings.Add(new Setting("DisableCache", null));
-            //_settings.Add(new Setting("DisableCertCheck", null));
-            //_settings.Add(new Setting("ExcludePUA", null));
-            //_settings.Add(new Setting("ExcludePath", null));
-            //_settings.Add(new Setting("ExitOnOOM", null));
-            //_settings.Add(new Setting("ExtendedDetectionInfo", null));
-            //_settings.Add(new Setting("FixStaleSocket", null));
-            //_settings.Add(new Setting("FollowDirectorySymlinks", null));
-            //_settings.Add(new Setting("FollowFileSymlinks", null));
-            //_settings.Add(new Setting("ForceToDisk", null));
-            //_settings.Add(new Setting("Foreground", null));
-            //_settings.Add(new Setting("HeuristicScanPrecedence", null));
-            //_settings.Add(new Setting("IdleTimeout", null));
-            //_settings.Add(new Setting("IncludePUA", null));
-            //_settings.Add(new Setting("LeaveTemporaryFiles", null));
-            //_settings.Add(new Setting("LocalSocketGroup", null));
-            //_settings.Add(new Setting("LocalSocketMode", null));
-            //_settings.Add(new Setting("LogClean", null));
-            //_settings.Add(new Setting("LogFacility", null));
-            //_settings.Add(new Setting("LogFile", null));
-            //_settings.Add(new Setting("LogFileMaxSize", null));
-            //_settings.Add(new Setting("LogFileUnlock", null));
-            //_settings.Add(new Setting("LogRotate", null));
-            //_settings.Add(new Setting("LogSyslog", null));
-            //_settings.Add(new Setting("LogTime", null));
-            //_settings.Add(new Setting("LogVerbose", null));
-            //_settings.Add(new Setting("MaxConnectionQueueLength", null));
-            //_settings.Add(new Setting("MaxDirectoryRecursion", null));
-            //_settings.Add(new Setting("MaxEmbeddedPE", null));
-            //_settings.Add(new Setting("MaxFileSize", null));
-            //_settings.Add(new Setting("MaxFiles", null));
-            //_settings.Add(new Setting("MaxHTMLNoTags", null));
-            //_settings.Add(new Setting("MaxHTMLNormalize", null));
-            //_settings.Add(new Setting("MaxIconsPE", null));
-            //_settings.Add(new Setting("MaxPartitions", null));
-            //_settings.Add(new Setting("MaxQueue", null));
-            //_settings.Add(new Setting("MaxRecHWP3", null));
-            //_settings.Add(new Setting("MaxRecursion", null));
-            //_settings.Add(new Setting("MaxScanSize", null));
-            //_settings.Add(new Setting("MaxScriptNormalize", null));
-            //_settings.Add(new Setting("MaxThreads", null));
-            //_settings.Add(new Setting("MaxZipTypeRcg", null));
-            //_settings.Add(new Setting("OLE2BlockMacros", null));
-            //_settings.Add(new Setting("OfficialDatabaseOnly", null));
-            //_settings.Add(new Setting("OnAccessDisableDDD", null));
-            //_settings.Add(new Setting("OnAccessExcludePath", null));
-            //_settings.Add(new Setting("OnAccessExcludeUID", null));
-            //_settings.Add(new Setting("OnAccessExtraScanning", null));
-            //_settings.Add(new Setting("OnAccessIncludePath", null));
-            //_settings.Add(new Setting("OnAccessMaxFileSize", null));
-            //_settings.Add(new Setting("OnAccessMountPath", null));
-            //_settings.Add(new Setting("OnAccessPrevention", null));
-            //_settings.Add(new Setting("PCREMatchLimit", null));
-            //_settings.Add(new Setting("PCREMaxFileSize", null));
-            //_settings.Add(new Setting("PCRERecMatchLimit", null));
-            //_settings.Add(new Setting("PartitionIntersection", null));
-            //_settings.Add(new Setting("PhishingAlwaysBlockCloak", null));
-            //_settings.Add(new Setting("PhishingAlwaysBlockSSLMismatch", null));
-            //_settings.Add(new Setting("PhishingScanURLs", null));
-            //_settings.Add(new Setting("PhishingSignatures", null));
-            //_settings.Add(new Setting("PidFile", null));
-            //_settings.Add(new Setting("ReadTimeout", null));
-            //_settings.Add(new Setting("ScanArchive", null));
-            //_settings.Add(new Setting("ScanELF", null));
-            //_settings.Add(new Setting("ScanHTML", null));
-            //_settings.Add(new Setting("ScanHWP3", null));
-            //_settings.Add(new Setting("ScanMail", null));
-            //_settings.Add(new Setting("ScanOLE2", null));
-            //_settings.Add(new Setting("ScanOnAccess", null));
-            //_settings.Add(new Setting("ScanPDF", null));
-            //_settings.Add(new Setting("ScanPE", null));
-            //_settings.Add(new Setting("ScanPartialMessages", null));
-            //_settings.Add(new Setting("ScanSWF", null));
-            //_settings.Add(new Setting("ScanXMLDOCS", null));
-            //_settings.Add(new Setting("SelfCheck", null));
-            //_settings.Add(new Setting("SendBufTimeout", null));
-            //_settings.Add(new Setting("StatsEnabled", null));
-            //_settings.Add(new Setting("StatsHostID", null));
-            //_settings.Add(new Setting("StatsPEDisabled", null));
-            //_settings.Add(new Setting("StatsTimeout", null));
-            //_settings.Add(new Setting("StreamMaxLength", null));
-            //_settings.Add(new Setting("StreamMaxPort", null));
-            //_settings.Add(new Setting("StreamMinPort", null));
-            //_settings.Add(new Setting("StructuredDataDetection", null));
-            //_settings.Add(new Setting("StructuredMinCreditCardCount", null));
-            //_settings.Add(new Setting("StructuredMinSSNCount", null));
-            //_settings.Add(new Setting("StructuredSSNFormatNormal", null));
-            //_settings.Add(new Setting("StructuredSSNFormatStripped", null));
-            //_settings.Add(new Setting("TCPAddr", null));
-            //_settings.Add(new Setting("TCPSocket", null));
-            //_settings.Add(new Setting("TemporaryDirectory", null));
-            //_settings.Add(new Setting("User", null));
-            //_settings.Add(new Setting("VirusEvent", null));
 
-            // add commandline parameters
+            // add command-line parameters
 
             _options = new List<Option>();
             _options.Add(new Option("help"));
             _options.Add(new Option("version"));
             _options.Add(new Option("verbose"));
+            _options.Add(new Option("archive-verbose"));
+            _options.Add(new Option("debug"));
+            _options.Add(new Option("quiet"));
+            _options.Add(new Option("stdout"));
+            _options.Add(new Option("no-summary"));
+            _options.Add(new Option("infected", Option.ConfigFormat.key));
+            _options.Add(new Option("suppress-ok-results"));
+            _options.Add(new Option("bell"));
+            _options.Add(new Option("tempdir",Option.ConfigFormat.text));
+            _options.Add(new Option("leave-temps"));
+            _options.Add(new Option("gen-json"));
             _options.Add(new Option("database", _databasePath, Option.ConfigFormat.text));
+            _options.Add(new Option("official-db-only"));
+            _options.Add(new Option("fail-if-cvd-older-than"));
             _options.Add(new Option("log", _logFilenamePath, Option.ConfigFormat.text));
-            _options.Add(new Option("recursive", "", Option.ConfigFormat.key));
-            _options.Add(new Option("infected", "", Option.ConfigFormat.key));
+            _options.Add(new Option("recursive", Option.ConfigFormat.yesno));   // defaults to no
+            //_options.Add(new Option("allmatch", Option.ConfigFormat.yesno));  // defaults to no
 
-            //  --exclude="[^\]*\.dbx$" --exclude="[^\]*\.tbb$" --exclude="[^\]*\.pst$" --exclude="[^\]*\.dat$" --exclude="[^\]*\.log$" --exclude="[^\]*\.chm$" -i C:\
 
             /*
+             
+    --cross-fs[=yes(*)/no]               Scan files and directories on other filesystems
+    --follow-dir-symlinks[=0/1(*)/2]     Follow directory symlinks (0 = never, 1 = direct, 2 = always)
+    --follow-file-symlinks[=0/1(*)/2]    Follow file symlinks (0 = never, 1 = direct, 2 = always)
+    --file-list=FILE      -f FILE        Scan files from FILE
+    --remove[=yes/no(*)]                 Remove infected files. Be careful!
+    --move=DIRECTORY                     Move infected files into DIRECTORY
+    --copy=DIRECTORY                     Copy infected files into DIRECTORY
+    --exclude=REGEX                      Don't scan file names matching REGEX
+    --exclude-dir=REGEX                  Don't scan directories matching REGEX
+    --include=REGEX                      Only scan file names matching REGEX
+    --include-dir=REGEX                  Only scan directories matching REGEX
+    --memory                             Scan loaded executable modules
+    --kill                               Kill/Unload infected loaded modules
+    --unload                             Unload infected modules from processes
 
-_options.Add(new Option("archive-verbose"))
-_options.Add(new Option("debug"
-_options.Add(new Option("quiet"
-_options.Add(new Option("stdout"
-_options.Add(new Option("no-summary
-_options.Add(new Option("infected
-_options.Add(new Option("no-summary
-_options.Add(new Option("suppress-ok-results
-_options.Add(new Option("bell
-_options.Add(new Option("tempdir
-_options.Add(new Option("leave-temps
-_options.Add(new Option("gen-json
-_options.Add(new Option("database
-_options.Add(new Option("official-db-only
-_options.Add(new Option("log
-_options.Add(new Option("recursive
-_options.Add(new Option("allmatch
-_options.Add(new Option("cross-fs
-_options.Add(new Option("follow-dir-symlinks
-_options.Add(new Option("follow-file-symlinks
-_options.Add(new Option("file-list
-_options.Add(new Option("remove
-_options.Add(new Option("move
-_options.Add(new Option("copy
-_options.Add(new Option("exclude
-_options.Add(new Option("exclude-dir
-_options.Add(new Option("include
-_options.Add(new Option("include-dir
-_options.Add(new Option("bytecode
-_options.Add(new Option("bytecode-unsigned
-_options.Add(new Option("bytecode-timeout
-_options.Add(new Option("statistics
-_options.Add(new Option("detect-pua
-_options.Add(new Option("exclude-pua
-_options.Add(new Option("include-pua
-_options.Add(new Option("detect-structured
-_options.Add(new Option("structured-ssn-format=X            SSN format (0=normal,1=stripped,2=both)
+    --bytecode[=yes(*)/no]               Load bytecode from the database
+    --bytecode-unsigned[=yes/no(*)]      Load unsigned bytecode
+                                         **Caution**: You should NEVER run bytecode signatures from untrusted sources.
+                                         Doing so may result in arbitrary code execution.
+    --bytecode-timeout=N                 Set bytecode timeout (in milliseconds)
+    --statistics[=none(*)/bytecode/pcre] Collect and print execution statistics
+    --detect-pua[=yes/no(*)]             Detect Possibly Unwanted Applications
+    --exclude-pua=CAT                    Skip PUA sigs of category CAT
+    --include-pua=CAT                    Load PUA sigs of category CAT
+    --detect-structured[=yes/no(*)]      Detect structured data (SSN, Credit Card)
+    --structured-ssn-format=X            SSN format (0=normal,1=stripped,2=both)
     --structured-ssn-count=N             Min SSN count to generate a detect
     --structured-cc-count=N              Min CC count to generate a detect
+    --structured-cc-mode=X               CC mode (0=credit debit and private label, 1=credit cards only
     --scan-mail[=yes(*)/no]              Scan mail files
-    --phishing-sigs[=yes(*)/no]          Signature-based phishing detection
-    --phishing-scan-urls[=yes(*)/no]     URL-based phishing detection
+    --phishing-sigs[=yes(*)/no]          Enable email signature-based phishing detection
+    --phishing-scan-urls[=yes(*)/no]     Enable URL signature-based phishing detection
+    --heuristic-alerts[=yes(*)/no]       Heuristic alerts
     --heuristic-scan-precedence[=yes/no(*)] Stop scanning as soon as a heuristic match is found
-    --phishing-ssl[=yes/no(*)]           Always block (flag) SSL mismatches in URLs (phishing module)
-    --phishing-cloak[=yes/no(*)]         Always block (flag) cloaked URLs (phishing module)
-    --partition-intersection[=yes/no(*)] Detect partition intersections in raw disk images using heuristics
-    --algorithmic-detection[=yes(*)/no]  Algorithmic detection
     --normalize[=yes(*)/no]              Normalize html, script, and text files. Use normalize=no for yara compatibility
     --scan-pe[=yes(*)/no]                Scan PE files
     --scan-elf[=yes(*)/no]               Scan ELF files
@@ -276,13 +176,20 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
     --scan-xmldocs[=yes(*)/no]           Scan xml-based document files
     --scan-hwp3[=yes(*)/no]              Scan HWP3 files
     --scan-archive[=yes(*)/no]           Scan archive files (supported by libclamav)
-    --detect-broken[=yes/no(*)]          Try to detect broken executable files
-    --block-encrypted[=yes/no(*)]        Block (flag) encrypted archives
-    --block-macros[=yes/no(*)]           Block (flag) OLE2 files with VBA macros
-    --block-max[=yes/no(*)]              Block (flag) files that exceed max file size, max scan size, or max recursion limit
+    --alert-broken[=yes/no(*)]           Alert on broken executable files (PE & ELF)
+    --alert-broken-media[=yes/no(*)]     Alert on broken graphics files (JPEG, TIFF, PNG, GIF)
+    --alert-encrypted[=yes/no(*)]        Alert on encrypted archives and documents
+    --alert-encrypted-archive[=yes/no(*)] Alert on encrypted archives
+    --alert-encrypted-doc[=yes/no(*)]    Alert on encrypted documents
+    --alert-macros[=yes/no(*)]           Alert on OLE2 files containing VBA macros
+    --alert-exceeds-max[=yes/no(*)]      Alert on files that exceed max file size, max scan size, or max recursion limit
+    --alert-phishing-ssl[=yes/no(*)]     Alert on emails containing SSL mismatches in URLs
+    --alert-phishing-cloak[=yes/no(*)]   Alert on emails containing cloaked URLs
+    --alert-partition-intersection[=yes/no(*)] Alert on raw DMG image files containing partition intersections
     --nocerts                            Disable authenticode certificate chain verification in PE files
     --dumpcerts                          Dump authenticode certificate chain in PE files
 
+    --max-scantime=#n                    Scan time longer than this will be skipped and assumed clean (milliseconds)
     --max-filesize=#n                    Files larger than this will be skipped and assumed clean
     --max-scansize=#n                    The maximum amount of data to scan for each container file (**)
     --max-files=#n                       The maximum number of files to scan for each container file (**)
@@ -301,11 +208,11 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
     --pcre-max-filesize=#n               Maximum size file to perform PCRE subsig matching.
     --disable-cache                      Disable caching and cache checks for hash sums of scanned files.
 
-             * 
              */
+
+
             Debug.WriteLine("Out ClamScan()");
         }
-
         #endregion
         #region Properties
 
@@ -409,7 +316,9 @@ _options.Add(new Option("structured-ssn-format=X            SSN format (0=normal
     --exclude-dir=REGEX                  Don't scan directories matching REGEX
     --include=REGEX                      Only scan file names matching REGEX
     --include-dir=REGEX                  Only scan directories matching REGEX
-
+    --memory                             Scan loaded executable modules
+    --kill                               Kill/Unload infected loaded modules
+    --unload                             Unload infected modules from processes
     --bytecode[=yes(*)/no]               Load bytecode from the database
     --bytecode-unsigned[=yes/no(*)]      Load unsigned bytecode
     --bytecode-timeout=N                 Set bytecode timeout (in milliseconds)

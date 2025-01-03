@@ -52,7 +52,11 @@ namespace ClamAVLibrary
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
-                        basePath = basePath.Substring(0, pos);
+                        basePath = basePath.Substring(0, pos) + System.IO.Path.DirectorySeparatorChar + name;
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
                         break;
                     }
                 case DataLocation.Local:
@@ -96,9 +100,10 @@ namespace ClamAVLibrary
             // Add command line options
 
             _options = new List<Option>();
-            _options.Add(new Option("appdir"));
-            _options.Add(new Option("tempdir"));
-            _options.Add(new Option("force"));
+            _options.Add(new Option("force",Option.ConfigFormat.key));
+            _options.Add(new Option("progress",Option.ConfigFormat.key));
+            _options.Add(new Option("appdir", Option.ConfigFormat.text));
+            _options.Add(new Option("tempdir",Option.ConfigFormat.text));
 
             Debug.WriteLine("Out UpdateClam()");
         }

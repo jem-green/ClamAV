@@ -53,7 +53,11 @@ namespace ClamAVLibrary
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
-                        basePath = basePath.Substring(0, pos);
+                        basePath = basePath.Substring(0, pos) + System.IO.Path.DirectorySeparatorChar + name;
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
                         break;
                     }
                 case DataLocation.Local:
@@ -88,7 +92,7 @@ namespace ClamAVLibrary
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "freshclam.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "freshclam.conf";
 
-            // Not sure about the hardcoding here
+            // Not sure about the hard-coding here
 
             _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 

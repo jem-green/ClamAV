@@ -170,7 +170,7 @@ namespace ClamAVLibrary
                     }
             }
 
-            // Syslog doesn't use priority as this is a combination of severity and facility
+            // Sys-log doesn't use priority as this is a combination of severity and facility
 
             Rfc3164 message = new Rfc3164
             {
@@ -182,7 +182,7 @@ namespace ClamAVLibrary
             string tag;
             try
             {
-                tag = string.Format("{0}[{1}]", applicationName,eventName);
+                tag = string.Format("{0}[{1}]", eventName, applicationName);
 
                 if (tag.Length > 32)
                 {

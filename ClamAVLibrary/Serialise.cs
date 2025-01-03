@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Xml;
+using static ClamAVLibrary.Component;
 
 namespace ClamAVLibrary
 {
@@ -73,7 +74,9 @@ namespace ClamAVLibrary
             string key = "";
             string value = "";
             string id = "";
-            Component.OperatingMode mode = Component.OperatingMode.Combined;
+            bool enabled = true;
+            Forwarder.ForwarderType forwarderType = Forwarder.ForwarderType.None;
+            Component.OperatingMode mode = Component.OperatingMode.Standalone;
             Component.DataLocation location = Component.DataLocation.Program;
 
             try
@@ -152,63 +155,9 @@ namespace ClamAVLibrary
                                                 {
                                                     stack.Push(current);
                                                     current = element;
-                                                    forwarder = new Forwarder();
-
-                                                    if (xmlReader.HasAttributes == true)
-                                                    {
-                                                        while (xmlReader.MoveToNextAttribute())
-                                                        {
-                                                            text = xmlReader.Value.ToLower();
-                                                            switch (xmlReader.Name.ToLower())
-                                                            {
-                                                                case "id":
-                                                                    {
-                                                                        forwarder.Id = text;
-                                                                    }
-                                                                    break;
-                                                                case "type":
-                                                                    {
-                                                                        switch (text)
-                                                                        {
-
-                                                                            case "nma":
-                                                                                {
-                                                                                    forwarder.Type = Forwarder.ForwarderType.NotifyMyAndroid;
-                                                                                    break;
-                                                                                }
-                                                                            case "prowl":
-                                                                                {
-                                                                                    forwarder.Type = Forwarder.ForwarderType.Prowl;
-                                                                                    break;
-                                                                                }
-                                                                            case "smtp":
-                                                                                {
-                                                                                    forwarder.Type = Forwarder.ForwarderType.SMTP;
-                                                                                    break;
-                                                                                }
-                                                                            case "growl":
-                                                                            default:
-                                                                                {
-                                                                                    forwarder.Type = Forwarder.ForwarderType.Growl;
-                                                                                    break;
-                                                                                }
-                                                                        }
-                                                                        break;
-                                                                    }
-                                                            }
-                                                        }
-                                                    }
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Scan
-                                            case "scan":
-                                                {
-                                                    stack.Push(current);
-                                                    current = element;
                                                     id = "";
-                                                    mode = Component.OperatingMode.Combined;
-                                                    location = Component.DataLocation.Program;
+                                                    enabled = true;
+                                                    forwarderType = Forwarder.ForwarderType.None;
 
                                                     if (xmlReader.HasAttributes == true)
                                                     {
@@ -220,6 +169,87 @@ namespace ClamAVLibrary
                                                                 case "id":
                                                                     {
                                                                         id = text;
+                                                                    }
+                                                                    break;
+                                                                case "enabled":
+                                                                    {
+                                                                        enabled = BooleanLookup(text);
+                                                                    }
+                                                                    break;
+                                                                case "type":
+                                                                    {
+                                                                        switch (text)
+                                                                        {
+
+                                                                            case "nma":
+                                                                                {
+                                                                                    forwarderType = Forwarder.ForwarderType.NotifyMyAndroid;
+                                                                                    break;
+                                                                                }
+                                                                            case "prowl":
+                                                                                {
+                                                                                    forwarderType = Forwarder.ForwarderType.Prowl;
+                                                                                    break;
+                                                                                }
+                                                                            case "smtp":
+                                                                                {
+                                                                                    forwarderType = Forwarder.ForwarderType.SMTP;
+                                                                                    break;
+                                                                                }
+                                                                            case "growl":
+                                                                            default:
+                                                                                {
+                                                                                    forwarderType = Forwarder.ForwarderType.Growl;
+                                                                                    break;
+                                                                                }
+                                                                        }
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                    forwarder = new Forwarder();
+                                                    forwarder.Id = id;
+                                                    forwarder.Enabled = enabled;
+                                                    forwarder.Type = forwarderType;
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Option
+                                            case "option":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    key = "";
+                                                    value = "";
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Refresh
+                                            case "refresh":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    id = "";
+                                                    enabled = true;
+                                                    mode = Component.OperatingMode.Standalone;
+                                                    location = clamAV.Location;
+
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            text = xmlReader.Value.ToLower();
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        id = text;
+                                                                        break;
+                                                                    }
+                                                                case "enabled":
+                                                                    {
+                                                                        enabled = BooleanLookup(text);
                                                                         break;
                                                                     }
                                                                 case "mode":
@@ -236,19 +266,130 @@ namespace ClamAVLibrary
                                                         }
                                                     }
 
-                                                    if (mode == Component.OperatingMode.Combined)
+                                                    freshClam = new FreshClam(id, location);
+                                                    freshClam.Mode = mode;
+                                                    freshClam.Id = id;
+                                                    freshClam.Enabled = enabled;
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Scan
+                                            case "scan":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    id = "";
+                                                    enabled = true;
+                                                    mode = clamAV.Mode; // Apply global which defaults to standalone
+                                                    location = clamAV.Location;
+
+                                                    if (xmlReader.HasAttributes == true)
                                                     {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            text = xmlReader.Value.ToLower();
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        id = text;
+                                                                        break;
+                                                                    }
+                                                                case "enabled":
+                                                                    {
+                                                                        enabled = BooleanLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "mode":
+                                                                    {
+                                                                        mode = ClamAV.ModeLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "location":
+                                                                    {
+                                                                        location = ClamAV.LocationLookup(text);
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // defaults to the global setting which is standalone
+                                                    if (mode == Component.OperatingMode.Standalone)
+                                                    {
+                                                        // If scan running on a single server and doesn't need clamd
                                                         // Launch ClamScan
                                                         scan = new ClamScan(id, location);
                                                         scan.Mode = mode;
+                                                        scan.Enabled = enabled;
                                                     }
-                                                    else if (mode == Component.OperatingMode.Client)
+                                                    else if ((mode == Component.OperatingMode.Client) || (mode == Component.OperatingMode.Combined))
                                                     {
+                                                        // If scan is running remotely use then need clamd
                                                         // Launch ClamdScan
+
+                                                        int port = clamd.Port;
                                                         scan = new ClamdScan(id, location);
                                                         scan.Mode = mode;
+                                                        scan.Enabled = enabled;
                                                     }
 
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Server
+                                            case "server":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    id = "";
+                                                    enabled = true;
+                                                    mode = Component.OperatingMode.Server;
+                                                    location = clamAV.Location;
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            text = xmlReader.Value.ToLower();
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        id = text;
+                                                                        break;
+                                                                    }
+                                                                case "enabled":
+                                                                    {
+                                                                        enabled = BooleanLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "mode":
+                                                                    {
+                                                                        mode = ClamAV.ModeLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "location":
+                                                                    {
+                                                                        location = ClamAV.LocationLookup(text);
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+                                                    clamd = new Clamd(location);
+                                                    clamd.Mode = mode;
+                                                    clamd.Id = id;
+                                                    clamd.Enabled = enabled;
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Setting
+                                            case "setting":
+                                                {
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    key = "";
+                                                    value = "";
                                                     break;
                                                 }
                                             #endregion
@@ -296,135 +437,12 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
-                                            #region Server
-                                            case "server":
-                                                {
-                                                    stack.Push(current);
-                                                    current = element;
-                                                    id = "";
-                                                    mode = Component.OperatingMode.Server;
-                                                    location = Component.DataLocation.Program;
-                                                    if (xmlReader.HasAttributes == true)
-                                                    {
-                                                        while (xmlReader.MoveToNextAttribute())
-                                                        {
-                                                            text = xmlReader.Value.ToLower();
-                                                            switch (xmlReader.Name.ToLower())
-                                                            {
-                                                                case "id":
-                                                                    {
-                                                                        id = text;
-                                                                        break;
-                                                                    }
-                                                                case "mode":
-                                                                    {
-                                                                        mode = ClamAV.ModeLookup(text);
-                                                                        break;
-                                                                    }
-                                                                case "location":
-                                                                    {
-                                                                        location = ClamAV.LocationLookup(text);
-                                                                        break;
-                                                                    }
-                                                            }
-                                                        }
-                                                    }
-                                                    clamd = new Clamd(location);
-                                                    clamd.Mode = mode;
-                                                    clamd.Id = id;
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Refresh
-                                            case "refresh":
-                                                {
-                                                    stack.Push(current);
-                                                    current = element;
-                                                    id = "";
-                                                    mode = Component.OperatingMode.Combined;
-                                                    location = Component.DataLocation.Program;
-
-                                                    if (xmlReader.HasAttributes == true)
-                                                    {
-                                                        while (xmlReader.MoveToNextAttribute())
-                                                        {
-                                                            text = xmlReader.Value.ToLower();
-                                                            switch (xmlReader.Name.ToLower())
-                                                            {
-                                                                case "id":
-                                                                    {
-                                                                        id = text;
-                                                                        break;
-                                                                    }
-                                                                case "mode":
-                                                                    {
-                                                                        mode = ClamAV.ModeLookup(text);
-                                                                        break;
-                                                                    }
-                                                                case "location":
-                                                                    {
-                                                                        location = ClamAV.LocationLookup(text);
-                                                                        break;
-                                                                    }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    freshClam = new FreshClam(id);
-                                                    freshClam.Mode = mode;
-                                                    freshClam.Id = id;
-
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Update
-                                            case "update":
-                                                {
-                                                    stack.Push(current);
-                                                    current = element;
-                                                    id = "";
-                                                    mode = Component.OperatingMode.Combined;
-                                                    location = Component.DataLocation.Program;
-
-                                                    if (xmlReader.HasAttributes == true)
-                                                    {
-                                                        while (xmlReader.MoveToNextAttribute())
-                                                        {
-                                                            text = xmlReader.Value.ToLower();
-                                                            switch (xmlReader.Name.ToLower())
-                                                            {
-                                                                case "id":
-                                                                    {
-                                                                        id = text;
-                                                                        break;
-                                                                    }
-                                                                case "mode":
-                                                                    {
-                                                                        mode = ClamAV.ModeLookup(text);
-                                                                        break;
-                                                                    }
-                                                                case "location":
-                                                                    {
-                                                                        location = ClamAV.LocationLookup(text);
-                                                                        break;
-                                                                    }
-                                                            }
-                                                        }
-                                                    }
-
-                                                    updateClam = new UpdateClam(id);
-                                                    updateClam.Mode = mode;
-                                                    updateClam.Id = id;
-
-                                                    break;
-                                                }
-                                            #endregion
                                             #region Schedule
                                             case "schedule":
                                                 {
                                                     stack.Push(current);
                                                     current = element;
-
+                                                    enabled = true;
                                                     schedule = new Schedule();
 
                                                     if (xmlReader.HasAttributes == true)
@@ -446,19 +464,52 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
-                                            #region Setting
-                                            case "setting":
+                                            #region Update
+                                            case "update":
                                                 {
-                                                    key = "";
-                                                    value = "";
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Option
-                                            case "option":
-                                                {
-                                                    key = "";
-                                                    value = "";
+                                                    stack.Push(current);
+                                                    current = element;
+                                                    id = "";
+                                                    enabled = true;
+                                                    mode = Component.OperatingMode.Standalone;
+                                                    location = clamAV.Location;
+
+                                                    if (xmlReader.HasAttributes == true)
+                                                    {
+                                                        while (xmlReader.MoveToNextAttribute())
+                                                        {
+                                                            text = xmlReader.Value.ToLower();
+                                                            switch (xmlReader.Name.ToLower())
+                                                            {
+                                                                case "id":
+                                                                    {
+                                                                        id = text;
+                                                                        break;
+                                                                    }
+                                                                case "enabled":
+                                                                    {
+                                                                        enabled = BooleanLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "mode":
+                                                                    {
+                                                                        mode = ClamAV.ModeLookup(text);
+                                                                        break;
+                                                                    }
+                                                                case "location":
+                                                                    {
+                                                                        location = ClamAV.LocationLookup(text);
+                                                                        break;
+                                                                    }
+                                                            }
+                                                        }
+                                                    }
+
+                                                    updateClam = new UpdateClam(id, location);
+                                                    updateClam.Mode = mode;
+                                                    updateClam.Id = id;
+                                                    updateClam.Enabled = enabled;
+
                                                     break;
                                                 }
                                                 #endregion
@@ -475,48 +526,12 @@ namespace ClamAVLibrary
                                         TraceInternal.TraceVerbose(Level(level) + "</" + element + ">");
                                         switch (element)
                                         {
+                                            #region ClamAV
+                                            #endregion
                                             #region Configuration
                                             case "configuration":
                                                 {
                                                     current = stack.Pop();
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Setting
-                                            case "setting":
-                                                {
-                                                    Component.Setting setting = new Component.Setting(key, value);
-                                                    if (current == "server")
-                                                    {
-                                                        clamd.Update(setting);
-                                                    }
-                                                    else if (current == "update")
-                                                    {
-                                                        freshClam.Update(setting);
-                                                    }
-                                                    else if (current == "scan")
-                                                    {
-                                                        scan.Update(setting);
-                                                    }
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Option
-                                            case "option":
-                                                {
-                                                    Component.Option option = new Component.Option(key, value);
-                                                    if (stack.Peek() == "server")
-                                                    {
-                                                        clamd.Update(option);
-                                                    }
-                                                    else if (stack.Peek() == "update")
-                                                    {
-                                                        freshClam.Update(option);
-                                                    }
-                                                    else if (stack.Peek() == "scan")
-                                                    {
-                                                        scan.Update(option);
-                                                    }
                                                     break;
                                                 }
                                             #endregion
@@ -525,6 +540,37 @@ namespace ClamAVLibrary
                                                 {
                                                     forwarder.Key = key;
                                                     clamAV.Add(forwarder);
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Option
+                                            case "option":
+                                                {
+                                                    if (key.Length > 0)
+                                                    {
+                                                        Component.Option option = new Component.Option(key, value);
+                                                        if (stack.Peek() == "server")
+                                                        {
+                                                            clamd.Update(option);
+                                                        }
+                                                        else if (stack.Peek() == "update")
+                                                        {
+                                                            freshClam.Update(option);
+                                                        }
+                                                        else if (stack.Peek() == "scan")
+                                                        {
+                                                            scan.Update(option);
+                                                        }
+                                                    }
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Refresh
+                                            case "update":
+                                                {
+                                                    clamAV.Update = updateClam;
                                                     current = stack.Pop();
                                                     break;
                                                 }
@@ -538,22 +584,6 @@ namespace ClamAVLibrary
                                                     break;
                                                 }
                                             #endregion
-                                            #region Update
-                                            case "refresh":
-                                                {
-                                                    clamAV.Refresh = freshClam;
-                                                    current = stack.Pop();
-                                                    break;
-                                                }
-                                            #endregion
-                                            #region Refresh
-                                            case "update":
-                                                {
-                                                    clamAV.Update = updateClam;
-                                                    current = stack.Pop();
-                                                    break;
-                                                }
-                                            #endregion
                                             #region Server
                                             case "server":
                                                 {
@@ -561,6 +591,33 @@ namespace ClamAVLibrary
                                                     current = stack.Pop();
                                                     break;
                                                 }
+                                            #endregion
+                                            #region Setting
+                                            case "setting":
+                                                {
+                                                    if (key.Length > 0)
+                                                    {
+                                                        Component.Setting setting = new Component.Setting(key, value);
+                                                        if (current == "server")
+                                                        {
+                                                            clamd.Update(setting);
+                                                        }
+                                                        else if (current == "update")
+                                                        {
+                                                            freshClam.Update(setting);
+                                                        }
+                                                        else if (current == "scan")
+                                                        {
+                                                            scan.Update(setting);
+                                                        }
+                                                    }
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region StartDate
+                                            #endregion
+                                            #region StartTime
                                             #endregion
                                             #region Schedule
                                             case "schedule":
@@ -576,9 +633,17 @@ namespace ClamAVLibrary
                                                     else if (stack.Peek() == "scan")
                                                     {
                                                         // Problem here with type of scan
-                                                        // May have to test if server, client or combined
+                                                        // May have to test if server, standalone, client or combined
                                                         scan.Schedule = schedule;
                                                     }
+                                                    current = stack.Pop();
+                                                    break;
+                                                }
+                                            #endregion
+                                            #region Update
+                                            case "refresh":
+                                                {
+                                                    clamAV.Refresh = freshClam;
                                                     current = stack.Pop();
                                                     break;
                                                 }
@@ -734,7 +799,14 @@ namespace ClamAVLibrary
                                                 }
                                             case "path":
                                                 {
-                                                    scan.Path = text;
+                                                    if (current == "configuration")
+                                                    {
+                                                        clamAV.Path = text;
+                                                    }
+                                                    else if (current == "schedule")
+                                                    {
+                                                        scan.Path = text;
+                                                    }
                                                     break;
                                                 }
                                             case "port":
@@ -747,7 +819,7 @@ namespace ClamAVLibrary
                                                         }
                                                         catch { }
                                                     }
-                                                    else if (current == "clamd")
+                                                    else if (current == "server")
                                                     {
                                                         try
                                                         {
@@ -920,6 +992,43 @@ namespace ClamAVLibrary
                 text = text + "  ";
             }
             return (text);
+        }
+
+        public static bool BooleanLookup(string locationName)
+        {
+            bool boolean = true;
+
+            if (bool.TryParse(locationName, out bool booleanValue))
+            {
+                boolean = booleanValue;
+            }
+            else
+            {
+                string lookup = locationName;
+                if (locationName.Length > 1)
+                {
+                    lookup = locationName.ToUpper();
+                }
+
+                switch (lookup)
+                {
+                    case "Y":
+                    case "YES":
+                    case "TRUE":
+                        {
+                            boolean = true;
+                            break;
+                        }
+                    case "N":
+                    case "NO":
+                    case "FALSE":
+                        {
+                            boolean =false;
+                            break;
+                        }
+                }
+            }
+            return (boolean);
         }
 
         #endregion

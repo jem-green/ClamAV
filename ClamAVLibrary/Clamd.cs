@@ -28,17 +28,18 @@ namespace ClamAVLibrary
         {
             Debug.WriteLine("In Clamd()");
             _execute = "clamd.exe";
-            if (port != 0)
+            if (port > 0)
             {
                 this._port = port;
             }
             string basePath = "";
+            string name = "clamav";
 
             switch (location)
             {
                 case Component.DataLocation.App:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);
@@ -49,12 +50,16 @@ namespace ClamAVLibrary
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
-                        basePath = basePath.Substring(0, pos);
+                        basePath = basePath.Substring(0, pos) + System.IO.Path.DirectorySeparatorChar + name;
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
                         break;
                     }
                 case Component.DataLocation.Local:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);
@@ -63,7 +68,7 @@ namespace ClamAVLibrary
                     }
                 case Component.DataLocation.Roaming:
                     {
-                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + System.IO.Path.DirectorySeparatorChar + "ClamAV";
+                        basePath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + System.IO.Path.DirectorySeparatorChar + name;
                         if (!Directory.Exists(basePath))
                         {
                             Directory.CreateDirectory(basePath);
@@ -84,7 +89,7 @@ namespace ClamAVLibrary
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamd.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamd.conf";
 
-            // Not sure about the hardcoding here
+            // Not sure about the hard-coding here
 
             _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
 
@@ -196,7 +201,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("User", null));
             _settings.Add(new Setting("VirusEvent", null));
 
-            // add commandline parameters
+            // add command line parameters
 
             _options = new List<Option>();
             _options.Add(new Option("help"));
@@ -687,7 +692,6 @@ namespace ClamAVLibrary
         # Default: no
         #StructuredSSNFormatStripped yes
 
-
         ##
         ## HTML
         ##
@@ -697,7 +701,6 @@ namespace ClamAVLibrary
         # If you turn off this option, the original files will still be scanned, but
         # without additional processing.
         #ScanHTML yes
-
 
         ##
         ## Archives

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using static ClamAVLibrary.Component;
 
 namespace ClamAVLibrary
 {
@@ -26,6 +27,10 @@ namespace ClamAVLibrary
         {
         }
 
+        public ClamdScan(string id, DataLocation location,int port) : this(id, DataLocation.Program, "", port)
+        {
+        }
+
         public ClamdScan(string id, string path) : this(id, DataLocation.Program, path, 0)
         {
         }
@@ -36,7 +41,7 @@ namespace ClamAVLibrary
 
             _id = id;
             _execute = "clamdscan.exe";
-            if (port != 0)
+            if (port > 0)
             {
                 this._port = port;
             }
@@ -63,7 +68,11 @@ namespace ClamAVLibrary
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
-                        basePath = basePath.Substring(0, pos);
+                        basePath = basePath.Substring(0, pos) + System.IO.Path.DirectorySeparatorChar + name;
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
                         break;
                     }
                 case Component.DataLocation.Local:
@@ -223,6 +232,9 @@ namespace ClamAVLibrary
             _options.Add(new Option("move"));
             _options.Add(new Option("copy"));
             _options.Add(new Option("config-file", _configFilenamePath, Option.ConfigFormat.text));
+            _options.Add(new Option("memory"));
+            _options.Add(new Option("kill"));
+            _options.Add(new Option("unload"));
             _options.Add(new Option("allmatch"));
             _options.Add(new Option("multiscan"));
             _options.Add(new Option("infected"));
@@ -317,6 +329,9 @@ namespace ClamAVLibrary
     --move=DIRECTORY                   Move infected files into DIRECTORY
     --copy=DIRECTORY                   Copy infected files into DIRECTORY
     --config-file=FILE                 Read configuration from FILE.
+    --memory                           Scan loaded executable modules
+    --kill                             Kill/Unload infected loaded modules
+    --unload                           Unload infected modules from processes
     --allmatch            -z           Continue scanning within file after finding a match.
     --multiscan           -m           Force MULTISCAN mode
     --infected            -i           Only print infected files
@@ -324,5 +339,6 @@ namespace ClamAVLibrary
     --reload                           Request clamd to reload virus database
     --fdpass                           Pass filedescriptor to clamd (useful if clamd is running as a different user)
     --stream                           Force streaming files to clamd (for debugging and unit testing)
-     */
+     
+    */
 }

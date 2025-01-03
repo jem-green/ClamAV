@@ -2,15 +2,20 @@
 <clamav>
   <configuration>
     <!--server, client or combined-->
-    <mode>server</mode>
+    <mode>combined</mode>
     <!--Program, App, Local, Roaming-->
     <location>program</location>
+    <!--ClamAV location-->
+    <app>
+      <path>c:\program files\clamav</path>
+    </app>
   </configuration>
-  <server id="clamd" mode="server">
+  <server id="clamd">
     <!--Settings can go here, and a limited number of options-->
     <port>3310</port>
+    <interface>192.168.0.0/24</interface>
   </server>
-  <refresh id="freshclam">
+  <refresh id="freshclam" enabled="false">
     <settings>
       <setting>
         <key></key>
@@ -27,11 +32,11 @@
       <!--<startdate format="dd-MMM-yyyy">10-Feb-2019</startdate>-->
       <startdate>10-Feb-2019</startdate>
       <starttime format="HH:mm:ss">00:00:00</starttime>
-      <units>day</units>
+      <units>minute</units>
       <timeout>1</timeout>
     </schedule>
   </refresh>
-  <update id="updateclam">
+  <update id="updateclam" enabled="false">
     <settings>
       <setting>
         <key></key>
@@ -54,7 +59,8 @@
   </update>
   <scans>
     <!--Assume that the mode is combined as this can proceed in a self contained way-->
-    <scan id="dive_d" mode="combined">
+    <scan id="dive_d">
+      <host>skylab</host>
       <settings>
         <setting>
           <key></key>
@@ -63,27 +69,31 @@
       </settings>
       <options>
         <option>
-          <key></key>
-          <value></value>
+          <key>recursive</key>
+          <value>yes</value>
+        </option>
+        <option>
+          <key>log</key>
+          <value>C:\Users\jemgr\AppData\Local\clamav\clamscan.log</value>
         </option>
       </options>
       <schedule>
         <!--<startdate format="dd-MMM-yyyy">10-feb-2019</startdate>-->
         <startdate>10-feb-2019</startdate>
         <starttime format="HH:mm:ss">02:00:00</starttime>
-        <units>week</units>
+        <units>minute</units>
         <timeout>1</timeout>
-        <path>d:\mailstore</path>
+        <path>d:\</path>
       </schedule>
     </scan>
   </scans>
   <forwarders>
     <forwarder id="syslog">
       <type>SYSLOG</type>
-      <host>tiangong</host>
+      <host>127.0.0.1</host>
       <protocol>rfc3164</protocol>
-      <severity>Emergency</severity>
-      <facility>Kernel</facility>
+      <facility>User</facility>
+      <severity>Alert</severity>
       <port>514</port>
     </forwarder>
   </forwarders>

@@ -74,9 +74,9 @@ namespace ClamAVConsole
                 logPath.Source = Parameter<string>.SourceType.App;
             }
 
-            Parameter<string> traceLevels = new Parameter<string>("");
-            traceLevels.Value = "verbose";
-            traceLevels.Source = Parameter<string>.SourceType.App;
+            Parameter<SourceLevels> traceLevels = new Parameter<SourceLevels>();
+            traceLevels.Value = TraceInternal.TraceLookup("verbose");
+            traceLevels.Source = Parameter<SourceLevels>.SourceType.App;
 
             // Configure tracer options
 
@@ -84,13 +84,13 @@ namespace ClamAVConsole
             FileStreamWithRolling dailyRolling = new FileStreamWithRolling(logFilenamePath, new TimeSpan(0, 1, 0, 0), FileMode.Append);
             TextWriterTraceListenerWithTime listener = new TextWriterTraceListenerWithTime(dailyRolling);
             Trace.AutoFlush = true;
-            TraceFilter fileTraceFilter = new System.Diagnostics.EventTypeFilter(SourceLevels.Verbose);
+            TraceFilter fileTraceFilter = new System.Diagnostics.EventTypeFilter(traceLevels.Value);
             listener.Filter = fileTraceFilter;
             Trace.Listeners.Clear();
             Trace.Listeners.Add(listener);
 
             ConsoleTraceListener console = new ConsoleTraceListener();
-            TraceFilter consoleTraceFilter = new System.Diagnostics.EventTypeFilter(SourceLevels.Information);
+            TraceFilter consoleTraceFilter = new System.Diagnostics.EventTypeFilter(SourceLevels.Verbose);
             console.Filter = consoleTraceFilter;
 			Trace.Listeners.Add(console);
 
@@ -194,9 +194,12 @@ namespace ClamAVConsole
             {
                 if (key.GetValue("debug", "").ToString().Length > 0)
                 {
-                    traceLevels.Value = (string)key.GetValue("debug", "verbose");
-                    traceLevels.Source = Parameter<string>.SourceType.Registry;
-                    TraceInternal.TraceVerbose("Use registry value; Debug=" + traceLevels.Value);
+                    string traceName = (string)key.GetValue("debug", "Verbose");
+                    traceName = traceName.TrimStart('"');
+                    traceName = traceName.TrimEnd('"');
+                    traceLevels.Value = TraceInternal.TraceLookup(traceName);
+                    traceLevels.Source = Parameter<SourceLevels>.SourceType.Registry;
+                    TraceInternal.TraceVerbose("Use command value Debug=" + traceLevels);
                 }
             }
             catch (NullReferenceException)
@@ -217,44 +220,55 @@ namespace ClamAVConsole
                 {
                     case "/D":
                     case "--debug":
-                        traceLevels.Value = args[item + 1];
-                        traceLevels.Value = traceLevels.Value.ToString().TrimStart('"');
-                        traceLevels.Value = traceLevels.Value.ToString().TrimEnd('"');
-                        traceLevels.Source = Parameter<string>.SourceType.Command;
-                        TraceInternal.TraceVerbose("Use command value Name=" + traceLevels);
-                        break;
+                        {
+                            string traceName = args[item + 1];
+                            traceName = traceName.TrimStart('"');
+                            traceName = traceName.TrimEnd('"');
+                            traceLevels.Value = TraceInternal.TraceLookup(traceName);
+                            traceLevels.Source = Parameter<SourceLevels>.SourceType.Command;
+                            TraceInternal.TraceVerbose("Use command value Debug=" + traceLevels);
+                            break;
+                        }
                     case "/N":
                     case "--name":
-                        appName.Value = args[item + 1];
-                        appName.Value = appName.Value.ToString().TrimStart('"');
-                        appName.Value = appName.Value.ToString().TrimEnd('"');
-                        appName.Source = Parameter<string>.SourceType.Command;
-                        TraceInternal.TraceVerbose("Use command value Name=" + appName);
-                        break;
+                        {
+                            appName.Value = args[item + 1];
+                            appName.Value = appName.Value.ToString().TrimStart('"');
+                            appName.Value = appName.Value.ToString().TrimEnd('"');
+                            appName.Source = Parameter<string>.SourceType.Command;
+                            TraceInternal.TraceVerbose("Use command value Name=" + appName);
+                            break;
+                        }
                     case "/P":
                     case "--path":
-                        appPath.Value = args[item + 1];
-                        appPath.Value = appPath.Value.ToString().TrimStart('"');
-                        appPath.Value = appPath.Value.ToString().TrimEnd('"');
-                        appPath.Source = Parameter<string>.SourceType.Command;
-                        TraceInternal.TraceVerbose("Use command value Path=" + appPath);
-                        break;
+                        {
+                            appPath.Value = args[item + 1];
+                            appPath.Value = appPath.Value.ToString().TrimStart('"');
+                            appPath.Value = appPath.Value.ToString().TrimEnd('"');
+                            appPath.Source = Parameter<string>.SourceType.Command;
+                            TraceInternal.TraceVerbose("Use command value Path=" + appPath);
+                            break;
+                        }
                     case "/n":
                     case "--logname":
-                        logName.Value = args[item + 1];
-                        logName.Value = logName.Value.ToString().TrimStart('"');
-                        logName.Value = logName.Value.ToString().TrimEnd('"');
-                        logName.Source = Parameter<string>.SourceType.Command;
-                        TraceInternal.TraceVerbose("Use command value logName=" + logName);
-                        break;
+                        {
+                            logName.Value = args[item + 1];
+                            logName.Value = logName.Value.ToString().TrimStart('"');
+                            logName.Value = logName.Value.ToString().TrimEnd('"');
+                            logName.Source = Parameter<string>.SourceType.Command;
+                            TraceInternal.TraceVerbose("Use command value logName=" + logName);
+                            break;
+                        }
                     case "/p":
                     case "--logpath":
-                        logPath.Value = args[item + 1];
-                        logPath.Value = logPath.Value.ToString().TrimStart('"');
-                        logPath.Value = logPath.Value.ToString().TrimEnd('"');
-                        logPath.Source = Parameter<string>.SourceType.Command;
-                        TraceInternal.TraceVerbose("Use command value logPath=" + logPath);
-                        break;
+                        {
+                            logPath.Value = args[item + 1];
+                            logPath.Value = logPath.Value.ToString().TrimStart('"');
+                            logPath.Value = logPath.Value.ToString().TrimEnd('"');
+                            logPath.Source = Parameter<string>.SourceType.Command;
+                            TraceInternal.TraceVerbose("Use command value logPath=" + logPath);
+                            break;
+                        }
                 }
             }
 
@@ -283,16 +297,7 @@ namespace ClamAVConsole
 
             // finally use the XML file.
 
-            Serialise serialise = new Serialise();
-			if (appPath.Value.ToString().Length > 0)
-            {
-                serialise.Path = appPath.Value.ToString();
-            }
-
-            if (appName.Value.ToString().Length > 0)
-            {
-                serialise.Filename = appName.Value.ToString();
-            }
+            Serialise serialise = new Serialise(appName.Value.ToString(), appPath.Value.ToString());
             clamAV = serialise.FromXML();
             if (clamAV != null)
             {

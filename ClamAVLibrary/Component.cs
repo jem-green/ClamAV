@@ -55,6 +55,7 @@ namespace ClamAVLibrary
         protected bool _running = false;
         protected bool _downloading = false;
         protected string _execute = "";
+        protected bool _enabled = false;
         protected Process proc;
 
         protected List<Setting> _settings = null;
@@ -65,7 +66,7 @@ namespace ClamAVLibrary
         protected string _logPath = "";
         protected string _logFilenamePath = "";
         protected string _configFilenamePath = "";
-        protected OperatingMode _mode = OperatingMode.Combined;
+        protected OperatingMode _mode = OperatingMode.Standalone;
         protected DataLocation _location = DataLocation.App;
 
         protected Schedule _schedule;
@@ -106,6 +107,13 @@ namespace ClamAVLibrary
                 _key = key;
                 _value = value;
                 _format = ConfigFormat.none;
+            }
+
+            public Setting(string key, ConfigFormat format)
+            {
+                _key = key;
+                _value = null;
+                _format = format;
             }
 
             public Setting(string key, object value, ConfigFormat format)
@@ -184,6 +192,13 @@ namespace ClamAVLibrary
                 _format = ConfigFormat.none;
             }
 
+            public Option(string key, ConfigFormat format)
+            {
+                _key = key;
+                _value = null;
+                _format = format;
+            }
+
             public Option(string key, object value, ConfigFormat format)
             {
                 _key = key;
@@ -233,7 +248,8 @@ namespace ClamAVLibrary
             None = 0,
             Client = 1,
             Server = 2,
-            Combined = 3
+            Standalone = 3,
+            Combined = 4
         }
 
         public enum DataLocation : int
@@ -261,6 +277,18 @@ namespace ClamAVLibrary
             set
             {
                 _settings = value;
+            }
+        }
+
+        public bool Enabled
+        {
+            get
+            {
+                return (_enabled);
+            }
+            set
+            {
+                _enabled = value;
             }
         }
 
@@ -573,6 +601,8 @@ namespace ClamAVLibrary
             StringWriter config = new StringWriter();
             foreach (Setting setting in _settings)
             {
+                // Check of config needs commenting out
+
                 if (setting.Value == null)
                 {
                     config.Write("# ");
@@ -585,6 +615,10 @@ namespace ClamAVLibrary
                     {
                         switch (setting.Format)
                         {
+                            case Setting.ConfigFormat.key:
+                                {
+                                    break;
+                                }
                             case Setting.ConfigFormat.value:
                                 {
                                     config.WriteLine(setting.Value);
@@ -609,6 +643,18 @@ namespace ClamAVLibrary
                                     else
                                     {
                                         config.WriteLine("no");
+                                    }
+                                    break;
+                                }
+                            case Setting.ConfigFormat.truefalse:
+                                {
+                                    if (Convert.ToBoolean(setting.Value) == true)
+                                    {
+                                        config.WriteLine("true");
+                                    }
+                                    else
+                                    {
+                                        config.WriteLine("false");
                                     }
                                     break;
                                 }
@@ -963,7 +1009,9 @@ namespace ClamAVLibrary
             }
             catch (Exception e)
             {
+                TraceInternal.TraceVerbose("[" + _id + "] failed " + _executePath + startInfo.Arguments);
                 TraceInternal.TraceError(e.ToString());
+
             }
 
             proc.Dispose();
@@ -1108,9 +1156,13 @@ namespace ClamAVLibrary
                 IPHostEntry hostEntry = Dns.GetHostEntry(host);
                 if (hostEntry.AddressList.Length > 0)
                 {
-                    if (hostEntry.AddressList[0].AddressFamily == AddressFamily.InterNetwork)
+                    foreach (IPAddress address in hostEntry.AddressList)
                     {
-                        ip = hostEntry.AddressList[0];
+                        if (address.AddressFamily == AddressFamily.InterNetwork)
+                        {
+                            ip = address;
+                            break;
+                        }
                     }
                 }
             }
