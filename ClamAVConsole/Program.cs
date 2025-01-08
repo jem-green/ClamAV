@@ -53,7 +53,7 @@ namespace ClamAVConsole
 
             int pos = 0;
             Parameter<string> appPath = new Parameter<string>("");
-            Parameter<string> appName = new Parameter<string>("clamav.xml");
+            Parameter<string> appName = new Parameter<string>("clamav.cfg");
 
             appPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
 
