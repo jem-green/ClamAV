@@ -191,7 +191,7 @@ namespace UpdateClam
                     {
                         _showProgress = true;
                     }
-                    else if (argument.Substring(0, 2) == "-V")
+                    else if (argument.Substring(0, 2).ToLower() == "-v")
                     {
                         _version = true;
                     }
@@ -204,12 +204,14 @@ namespace UpdateClam
         {
             int errorCode = -1;
 
-            string filename = "clamd.exe";
+            //https://www.clamav.net/downloads/
+
             string host = "https://www.clamav.net";
             string path = "/downloads/";
-            //string search = "click here</a>.</em></p>\r\n      </div>\r\n          <h3><strong>";
-            string search = "click here</a>.</em></p>\n      </div>\n          <h3><strong>";
             string query = "";
+
+            Console.WriteLine("Update ClamAV process started at " + DateTime.Now.ToString("F"));
+
             string data = "";
             string uri;
 
@@ -245,11 +247,14 @@ namespace UpdateClam
                 data = data.TrimEnd('\0');
 
                 // Search for the version
+                //string search = "click here</a>.</em></p>\r\n      </div>\r\n          <h3><strong>";
+                //string search = "click here</a>.</em></p>\n      </div>\n          <h3><strong>";
+                  string search = "click here</a>.</em></p>\n      </div>\n\n\n          <h3>";
 
                 int pos = data.IndexOf(search);
                 if (pos > 0)
                 {
-                    int next = data.IndexOf("</strong>", pos);
+                    int next = data.IndexOf(" <span", pos);
                     if (next > 0)
                     {
                         search = data.Substring(pos + search.Length, next - pos - search.Length);
@@ -257,11 +262,12 @@ namespace UpdateClam
                 }
 
                 if (search.Length > 0)
-                { 
+                {
 
                     // Need to decide if an update is needed so need to have the current build
                     // so check the version of _filename (clamd)
 
+                    string filename = "clamd.exe";
                     string fileNamePath = Path.Combine(_appdir, filename);
                     string fileVersion = "";
                     try
@@ -278,8 +284,10 @@ namespace UpdateClam
 
                         if ((fileVersion != search) || (_update == true))
                         {
-                            Console.Error.WriteLine("Clamav(" + fileVersion + ") update available " + search);
-                            Console.WriteLine("Application may prevent updates so issue PAUSE");
+
+                                Console.WriteLine("Clamav(" + fileVersion + ") update available " + search);
+                                Console.WriteLine("Application may prevent updates so issue PAUSE");
+                            
 
                             // Download
 
@@ -291,6 +299,7 @@ namespace UpdateClam
                             uri = ParseUri(host, path, query);
 
                             //https://www.clamav.net/downloads/production/clamav-0.104.0.win.x64.msi
+                            //https://www.clamav.net/downloads/production/clamav-1.4.2.win.x64.zip
 
                             try
                             {
@@ -318,8 +327,8 @@ namespace UpdateClam
                                         using (WebClient client = new WebClient())
                                         {
                                             client.Headers.Add("User-Agent", "updateclient");
-                                            Console.Error.WriteLine("Download " + uri);
-                                            Console.Error.WriteLine("Temporary location " + fileNamePath);
+                                            Console.WriteLine("Download " + uri);
+                                            Console.WriteLine("Temporary location " + fileNamePath);
                                             if (_showProgress == true)
                                             {
                                                 client.DownloadFileAsync(new Uri(uri), fileNamePath);
@@ -335,7 +344,7 @@ namespace UpdateClam
                                     catch (Exception e)
                                     {
                                         errorCode = 9;
-                                        Console.Error.WriteLine("Cannot download file");
+                                        Console.Error.WriteLine("ERROR: Cannot download file");
                                     }
 
                                     if (_showProgress == true)
@@ -387,12 +396,12 @@ namespace UpdateClam
 
                                         try
                                         {
-                                            Console.Error.WriteLine("Unpack " + fileNamePath);
+                                            Console.WriteLine("Unpack " + fileNamePath);
                                             Console.WriteLine(startInfo.FileName + " " + startInfo.Arguments);
                                             proc.Start();
 
                                             proc.WaitForExit();
-                                            Console.Error.WriteLine("Finished unpacking");
+                                            Console.WriteLine("Finished unpacking");
                                             Console.WriteLine("Update complete so issue RESUME");
                                             errorCode = 0;
 
@@ -400,19 +409,19 @@ namespace UpdateClam
                                             {
                                                 try
                                                 {
-                                                    Console.Error.WriteLine("Cleanup and delete " + fileNamePath);
+                                                    Console.WriteLine("Cleanup and delete " + fileNamePath);
                                                     File.Delete(fileNamePath);
                                                 }
                                                 catch (Exception)
                                                 {
-                                                    Console.Error.WriteLine("Could not delete " + fileNamePath);
+                                                    Console.Error.WriteLine("ERROR: Could not delete " + fileNamePath);
                                                 }
                                             }
                                         }
                                         catch (Exception e)
                                         {
                                             errorCode = 7;
-                                            Console.Error.WriteLine("Exception " + e.Message);
+                                            Console.Error.WriteLine("ERROR: Exception " + e.Message);
                                         }
 
                                         proc.Dispose();
@@ -421,56 +430,56 @@ namespace UpdateClam
                                     catch (Exception pe)
                                     {
                                         errorCode = 6;
-                                        Console.Error.WriteLine("Exception " + pe.Message);
+                                        Console.Error.WriteLine("ERROR: Exception " + pe.Message);
                                     }
 
                                 }
                                 catch (WebException iwe)
                                 {
                                     errorCode = 4;
-                                    Console.Error.WriteLine("Could not download package from " + uri);
-                                    Console.Error.WriteLine("Web Exception " + iwe.ToString());
+                                    Console.Error.WriteLine("ERROR: Could not download package from " + uri);
+                                    Console.Error.WriteLine("ERROR: Web Exception " + iwe.ToString());
                                 }
                                 catch (Exception ce)
                                 {
                                     errorCode = 5;
-                                    Console.Error.WriteLine("Exception " + ce.Message);
+                                    Console.Error.WriteLine("ERROR: Exception " + ce.Message);
                                 }
                             }
                             catch (Exception)
                             {
                                 errorCode = 6;
-                                Console.Error.WriteLine("Could not delete " + fileNamePath);
+                                Console.Error.WriteLine("ERROR: Could not delete " + fileNamePath);
                             }
                         }
                         else
                         {
-                            Console.Error.WriteLine("Clamav(" + fileVersion + ") is current");
+                            Console.WriteLine("Clamav(" + fileVersion + ") is current");
                             errorCode = 0;
                         }
                     }
                     catch (FileNotFoundException)
                     {
                         errorCode = 2;
-                        Console.Error.WriteLine("File not found " + fileNamePath);
+                        Console.Error.WriteLine("ERROR: File not found " + fileNamePath);
                     }
                     catch (Exception ex)
                     {
                         errorCode = 3;
-                        Console.Error.WriteLine("Exception " + ex.Message);
+                        Console.Error.WriteLine("ERROR: Exception " + ex.Message);
                     }
                 }
                 else
                 {
                     errorCode = 10;
-                    Console.Error.WriteLine("Version not found");
+                    Console.Error.WriteLine("ERROR: Version not found");
                 }
             }
             catch (WebException we)
             {
                 errorCode = 1;
-                Console.Error.WriteLine("Could not connect to " + uri);
-                Console.Error.WriteLine("Web Exception " + we.ToString());
+                Console.Error.WriteLine("ERROR: Could not connect to " + uri);
+                Console.Error.WriteLine("ERROR: Web Exception " + we.ToString());
             }
 
             return (errorCode);

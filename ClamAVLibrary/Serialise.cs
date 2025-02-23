@@ -75,6 +75,7 @@ namespace ClamAVLibrary
             string value = "";
             string id = "";
             bool enabled = true;
+            string appPath = "";
             Forwarder.ForwarderType forwarderType = Forwarder.ForwarderType.None;
             Component.OperatingMode mode = Component.OperatingMode.Standalone;
             Component.DataLocation location = Component.DataLocation.Program;
@@ -266,7 +267,7 @@ namespace ClamAVLibrary
                                                         }
                                                     }
 
-                                                    freshClam = new FreshClam(id, location);
+                                                    freshClam = new FreshClam(id, location, clamAV.Path);
                                                     freshClam.Mode = mode;
                                                     freshClam.Id = id;
                                                     freshClam.Enabled = enabled;
@@ -319,7 +320,7 @@ namespace ClamAVLibrary
                                                     {
                                                         // If scan running on a single server and doesn't need clamd
                                                         // Launch ClamScan
-                                                        scan = new ClamScan(id, location);
+                                                        scan = new ClamScan(id, location, clamAV.Path);
                                                         scan.Mode = mode;
                                                         scan.Enabled = enabled;
                                                     }
@@ -328,12 +329,11 @@ namespace ClamAVLibrary
                                                         // If scan is running remotely use then need clamd
                                                         // Launch ClamdScan
 
-                                                        int port = clamd.Port;
-                                                        scan = new ClamdScan(id, location);
+                                                        scan = new ClamdScan(id, location, clamAV.Path, clamd.Port);
+                                                        scan.Host = clamd.Host;
                                                         scan.Mode = mode;
                                                         scan.Enabled = enabled;
                                                     }
-
                                                     break;
                                                 }
                                             #endregion
@@ -376,7 +376,7 @@ namespace ClamAVLibrary
                                                             }
                                                         }
                                                     }
-                                                    clamd = new Clamd(location);
+                                                    clamd = new Clamd(location, clamAV.Path);
                                                     clamd.Mode = mode;
                                                     clamd.Id = id;
                                                     clamd.Enabled = enabled;
@@ -505,7 +505,7 @@ namespace ClamAVLibrary
                                                         }
                                                     }
 
-                                                    updateClam = new UpdateClam(id, location);
+                                                    updateClam = new UpdateClam(id, location, clamAV.Path);
                                                     updateClam.Mode = mode;
                                                     updateClam.Id = id;
                                                     updateClam.Enabled = enabled;

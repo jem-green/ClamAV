@@ -30,13 +30,9 @@ namespace ClamAVLibrary
 
             _id = id;
             _execute = "clamscan.exe";
-            if (path.Length > 0)
+            if (path.Length == 0)
             {
-                _path = path;
-            }
-            else
-            {
-                _path = ".";
+                path = ".";
             }
 
             _schedule = new Schedule();
@@ -57,6 +53,17 @@ namespace ClamAVLibrary
                         break;
                     }
                 case DataLocation.Program:
+                    {
+                        basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        int pos = basePath.LastIndexOf('\\');
+                        basePath = basePath.Substring(0, pos);
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
+                        break;
+                    }
+                case Component.DataLocation.Custom:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
@@ -98,10 +105,7 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamscan.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamscan.conf";
-
-            // Not sure about the hard-coding here
-
-            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
+            _executePath = path + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
 

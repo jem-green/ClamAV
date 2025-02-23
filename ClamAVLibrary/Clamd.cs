@@ -16,15 +16,20 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public Clamd() : this(DataLocation.Program, 0)
+        public Clamd() : this(DataLocation.Program, "", 0)
         {
         }
 
-        public Clamd(DataLocation location) : this(location, 0)
+        //public Clamd(DataLocation location) : this(location, "", 0)
+        //{
+        //}
+
+
+        public Clamd(DataLocation location, string path) : this(location, path, 0)
         {
         }
 
-        public Clamd(DataLocation location, int port)
+        public Clamd(DataLocation location, string path, int port)
         {
             Debug.WriteLine("In Clamd()");
             _execute = "clamd.exe";
@@ -32,6 +37,16 @@ namespace ClamAVLibrary
             {
                 this._port = port;
             }
+            else
+            {
+                this._port = 3310;
+            }
+
+            if (path.Length == 0)
+            {
+                path = ".";
+            }
+
             string basePath = "";
             string name = "clamav";
 
@@ -47,6 +62,17 @@ namespace ClamAVLibrary
                         break;
                     }
                 case Component.DataLocation.Program:
+                    {
+                        basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        int pos = basePath.LastIndexOf('\\');
+                        basePath = basePath.Substring(0, pos);
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
+                        break;
+                    }
+                case Component.DataLocation.Custom:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
@@ -88,10 +114,7 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "clamd.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "clamd.conf";
-
-            // Not sure about the hard-coding here
-
-            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
+            _executePath = path + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
             _settings.Add(new Setting("AlgorithmicDetection", null));
@@ -126,7 +149,7 @@ namespace ClamAVLibrary
             _settings.Add(new Setting("LocalSocketMode", null));
             _settings.Add(new Setting("LogClean", null));
             _settings.Add(new Setting("LogFacility", null));
-            _settings.Add(new Setting("LogFile", null));
+            _settings.Add(new Setting("LogFile", _logFilenamePath, Setting.ConfigFormat.text));
             _settings.Add(new Setting("LogFileMaxSize", null));
             _settings.Add(new Setting("LogFileUnlock", null));
             _settings.Add(new Setting("LogRotate", null));

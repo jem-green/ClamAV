@@ -356,18 +356,6 @@ namespace ClamAVLibrary
             }
         }
 
-        public Schedule Schedule
-        {
-            get
-            {
-                return (_schedule);
-            }
-            set
-            {
-                _schedule = value;
-            }
-        }
-
         public OperatingMode Mode
         {
             get
@@ -402,6 +390,18 @@ namespace ClamAVLibrary
             {
                 _port = value;
                 Update(new Setting("TCPSocket", _port));
+            }
+        }
+
+        public Schedule Schedule
+        {
+            get
+            {
+                return (_schedule);
+            }
+            set
+            {
+                _schedule = value;
             }
         }
 

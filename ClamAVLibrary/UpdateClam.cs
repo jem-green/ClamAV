@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using static System.Net.Mime.MediaTypeNames;
+using static ClamAVLibrary.Component;
 
 namespace ClamAVLibrary
 {
@@ -16,20 +18,24 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public UpdateClam() : this("", DataLocation.Program)
+        public UpdateClam() : this("", DataLocation.Program, "")
         {
         }
 
-        public UpdateClam(string id) : this(id, DataLocation.Program)
+        public UpdateClam(string id) : this(id, DataLocation.Program, "")
         {
         }
 
-        public UpdateClam(string id, DataLocation location)
+        public UpdateClam(string id, DataLocation location, string path)
         {
             Debug.WriteLine("In UpdateClam()");
 
             _id = id;
             _execute = "updateclam.exe";
+            if (path.Length == 0)
+            {
+                path = ".";
+            }
 
             _schedule = new Schedule();
             _schedule.Date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
@@ -49,6 +55,17 @@ namespace ClamAVLibrary
                         break;
                     }
                 case DataLocation.Program:
+                    {
+                        basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        int pos = basePath.LastIndexOf('\\');
+                        basePath = basePath.Substring(0, pos);
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
+                        break;
+                    }
+                case DataLocation.Custom:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
@@ -90,20 +107,21 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "updateclam.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "updateclam.conf";
-
-            // Not sure about the hard coding here
-
-            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
+            _executePath = path + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
 
             // Add command line options
 
             _options = new List<Option>();
-            _options.Add(new Option("force",Option.ConfigFormat.key));
-            _options.Add(new Option("progress",Option.ConfigFormat.key));
+
+            _options.Add(new Option("help", Option.ConfigFormat.truefalse));
+            _options.Add(new Option("version", Option.ConfigFormat.truefalse));
+            _options.Add(new Option("force",Option.ConfigFormat.truefalse));
+            _options.Add(new Option("progress",Option.ConfigFormat.truefalse));
             _options.Add(new Option("appdir", Option.ConfigFormat.text));
             _options.Add(new Option("tempdir",Option.ConfigFormat.text));
+            _options.Add(new Option("log", _logFilenamePath, Option.ConfigFormat.text));
 
             Debug.WriteLine("Out UpdateClam()");
         }

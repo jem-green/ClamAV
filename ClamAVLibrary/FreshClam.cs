@@ -17,20 +17,28 @@ namespace ClamAVLibrary
         #endregion
         #region Constructors
 
-        public FreshClam() : this("", DataLocation.Program)
+        public FreshClam() : this("", DataLocation.Program, "")
         {
         }
 
-        public FreshClam(string id) : this(id, DataLocation.Program)
+        public FreshClam(string id) : this(id, DataLocation.Program, "")
         {
         }
 
-        public FreshClam(string id, DataLocation location)
+        public FreshClam(string id, DataLocation location) : this(id, DataLocation.Program, "")
+        {
+        }
+
+        public FreshClam(string id, DataLocation location, string path)
         {
             Debug.WriteLine("In FreshClam()");
 
             _id = id;
             _execute = "freshclam.exe";
+            if (path.Length == 0)
+            {
+                path = ".";
+            }
 
             _schedule = new Schedule();
             _schedule.Date = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day);
@@ -50,6 +58,17 @@ namespace ClamAVLibrary
                         break;
                     }
                 case DataLocation.Program:
+                    {
+                        basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                        int pos = basePath.LastIndexOf('\\');
+                        basePath = basePath.Substring(0, pos);
+                        if (!Directory.Exists(basePath))
+                        {
+                            Directory.CreateDirectory(basePath);
+                        }
+                        break;
+                    }
+                case Component.DataLocation.Custom:
                     {
                         basePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
                         int pos = basePath.LastIndexOf('\\');
@@ -91,10 +110,7 @@ namespace ClamAVLibrary
             }
             _logFilenamePath = _logPath + System.IO.Path.DirectorySeparatorChar + "freshclam.log";
             _configFilenamePath = basePath + System.IO.Path.DirectorySeparatorChar + "freshclam.conf";
-
-            // Not sure about the hard-coding here
-
-            _executePath = "c:\\program files\\clamav" + System.IO.Path.DirectorySeparatorChar + _execute;
+            _executePath = path + System.IO.Path.DirectorySeparatorChar + _execute;
 
             _settings = new List<Setting>();
             _settings.Add(new Setting("AllowSupplementaryGroups"));
