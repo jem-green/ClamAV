@@ -71,30 +71,30 @@ namespace ClamAVService
             Debug.WriteLine("In ServiceWorkerMethod()");
 
             int pos = 0;
-            Parameter<string> appPath = new Parameter<string>("");
-            Parameter<string> appName = new Parameter<string>("clamav.cfg");
+            Parameter<string> appPath = new Parameter<string>("appPath","");
+            Parameter<string> appName = new Parameter<string>("appName", "clamav.cfg");
 
             appPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
             pos = appPath.Value.ToString().LastIndexOf(Path.DirectorySeparatorChar);
             if (pos > 0)
             {
                 appPath.Value = appPath.Value.ToString().Substring(0, pos);
-                appPath.Source = Parameter<string>.SourceType.App;
+                appPath.Source = IParameter.SourceType.App;
             }
 
-            Parameter<string> logPath = new Parameter<string>("");
-            Parameter<string> logName = new Parameter<string>("clamavservice");
+            Parameter<string> logPath = new Parameter<string>("logPath", "");
+            Parameter<string> logName = new Parameter<string>("LogName","clamavservice");
             logPath.Value = System.Reflection.Assembly.GetExecutingAssembly().Location;
             pos = logPath.Value.ToString().LastIndexOf(Path.DirectorySeparatorChar);
             if (pos > 0)
             {
                 logPath.Value = logPath.Value.ToString().Substring(0, pos);
-                logPath.Source = Parameter<string>.SourceType.App;
+                logPath.Source = IParameter.SourceType.App;
             }
 
-            Parameter<string> traceLevels = new Parameter<string>("");
+            Parameter<string> traceLevels = new Parameter<string>("traceLevel","");
             traceLevels.Value = "verbose";
-            traceLevels.Source = Parameter<string>.SourceType.App;
+            traceLevels.Source = IParameter.SourceType.App;
 
             // Configure tracer options
 
@@ -104,8 +104,8 @@ namespace ClamAVService
             Trace.AutoFlush = true;
             TraceFilter fileTraceFilter = new System.Diagnostics.EventTypeFilter(SourceLevels.Verbose);
             listener.Filter = fileTraceFilter;
-            Trace.Listeners.Clear();
-            Trace.Listeners.Add(listener);
+            System.Diagnostics.Trace.Listeners.Clear();
+            System.Diagnostics.Trace.Listeners.Add(listener);
 
             // 
 
@@ -127,7 +127,7 @@ namespace ClamAVService
                 if (key.GetValue("logpath", "").ToString().Length > 0)
                 {
                     logPath.Value = (string)key.GetValue("logpath", logPath);
-                    logPath.Source = Parameter<string>.SourceType.Registry;
+                    logPath.Source = IParameter.SourceType.Registry;
                     TraceInternal.TraceVerbose("Use registry value; logPath=" + logPath);
                 }
             }
@@ -147,7 +147,7 @@ namespace ClamAVService
                 if (key.GetValue("logname", "").ToString().Length > 0)
                 {
                     logName.Value = (string)key.GetValue("logname", logName);
-                    logName.Source = Parameter<string>.SourceType.Registry;
+                    logName.Source = IParameter.SourceType.Registry;
                     TraceInternal.TraceVerbose("Use registry value; LogName=" + logName);
                 }
             }
@@ -167,7 +167,7 @@ namespace ClamAVService
                 if (key.GetValue("name", "").ToString().Length > 0)
                 {
                     appName.Value = (string)key.GetValue("name", appName);
-                    appName.Source = Parameter<string>.SourceType.Registry;
+                    appName.Source = IParameter.SourceType.Registry;
                     TraceInternal.TraceVerbose("Use registry value; Name=" + appName);
                 }
             }
@@ -187,7 +187,7 @@ namespace ClamAVService
                 if (key.GetValue("path", "").ToString().Length > 0)
                 {
                     appPath.Value = (string)key.GetValue("path", appPath);
-                    appPath.Source = Parameter<string>.SourceType.Registry;
+                    appPath.Source = IParameter.SourceType.Registry;
                     TraceInternal.TraceVerbose("Use registry value; Path=" + appPath);
                 }
             }
@@ -207,7 +207,7 @@ namespace ClamAVService
                 if (key.GetValue("debug", "").ToString().Length > 0)
                 {
                     traceLevels.Value = (string)key.GetValue("debug", "verbose");
-                    traceLevels.Source = Parameter<string>.SourceType.Registry;
+                    traceLevels.Source = IParameter.SourceType.Registry;
                     TraceInternal.TraceVerbose("Use registry value; Debug=" + traceLevels.Value);
                 }
             }
@@ -223,7 +223,7 @@ namespace ClamAVService
             // Redirect the output
 
             listener.Flush();
-            Trace.Listeners.Remove(listener);
+            System.Diagnostics.Trace.Listeners.Remove(listener);
             listener.Close();
             listener.Dispose();
 
@@ -236,7 +236,7 @@ namespace ClamAVService
             SourceLevels sourceLevels = TraceInternal.TraceLookup(traceLevels.Value.ToString());
             fileTraceFilter = new System.Diagnostics.EventTypeFilter(sourceLevels);
             listener.Filter = fileTraceFilter;
-            Trace.Listeners.Add(listener);
+            System.Diagnostics.Trace.Listeners.Add(listener);
         
             TraceInternal.TraceInformation("Use Name=" + appName.Value);
             TraceInternal.TraceInformation("Use Path=" + appPath.Value);

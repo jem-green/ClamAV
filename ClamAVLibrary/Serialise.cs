@@ -324,9 +324,18 @@ namespace ClamAVLibrary
                                                         scan.Mode = mode;
                                                         scan.Enabled = enabled;
                                                     }
-                                                    else if ((mode == Component.OperatingMode.Client) || (mode == Component.OperatingMode.Combined))
+                                                    else if (mode == Component.OperatingMode.Client)
                                                     {
-                                                        // If scan is running remotely use then need clamd
+                                                        // If server is running remotely and scan running locally then need clamd
+                                                        // Launch ClamdScan
+
+                                                        scan = new ClamdScan(id, location, clamAV.Path);
+                                                        scan.Mode = mode;
+                                                        scan.Enabled = enabled;
+                                                    }
+                                                    else if (mode == Component.OperatingMode.Combined)
+                                                    {
+                                                        // If server is running locally and scan running locally or remotely then need clamd
                                                         // Launch ClamdScan
 
                                                         scan = new ClamdScan(id, location, clamAV.Path, clamd.Port);
@@ -680,9 +689,13 @@ namespace ClamAVLibrary
                                                 }
                                             case "host":
                                                 {
-                                                    if (current == "forwarder")
+                                                    if (current == "server")
                                                     {
-                                                        forwarder.Host = text;
+                                                        clamd.Host = text;
+                                                    }
+                                                    else if (current == "forwarder")
+                                                    { 
+                                                         forwarder.Host = text;
                                                     }
                                                     else if (current == "scan")
                                                     {
@@ -827,6 +840,14 @@ namespace ClamAVLibrary
                                                         }
                                                         catch { }
                                                     }
+                                                    else if (current == "scan")
+                                                    {
+                                                        try
+                                                        {
+                                                            scan.Port = Convert.ToInt32(text);
+                                                        }
+                                                        catch { }
+                                                    }
                                                     break;
                                                 }
                                             case "protocol":
@@ -959,6 +980,7 @@ namespace ClamAVLibrary
                     }
                     catch (Exception ex)
                     {
+                        TraceInternal.TraceVerbose(ex.StackTrace);
                         TraceInternal.TraceWarning("XML Error " + ex.Message);
                     }
                     fs.Close();

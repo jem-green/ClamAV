@@ -74,7 +74,7 @@ namespace UpdateClam
         }
 
         #endregion
-        #region Private
+            #region Private
         private static bool ValidateArguments(string[] args)
         {
             // Passed args allow for changes to web address and application location

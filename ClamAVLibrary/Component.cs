@@ -243,13 +243,14 @@ namespace ClamAVLibrary
             }
         }
 
+        [Flags]
         public enum OperatingMode : int
         {
             None = 0,
             Client = 1,
             Server = 2,
-            Standalone = 3,
-            Combined = 4
+            Standalone = 4,
+            Combined = 8
         }
 
         public enum DataLocation : int

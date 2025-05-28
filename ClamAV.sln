@@ -17,9 +17,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "updateclam", "UpdateClam\up
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tracer", "Tracer", "{4C1F7491-7C9E-4386-92D4-CFF88D682482}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net452", "net452", "{90403AFD-EEFD-4A07-91C9-E75B089C7072}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "net6.0", "net6.0", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
-		ThirdParty\Tracer\net452\TracerLibrary.dll = ThirdParty\Tracer\net452\TracerLibrary.dll
+		ThirdParty\Tracer\net6.0\TracerLibrary.deps.json = ThirdParty\Tracer\net6.0\TracerLibrary.deps.json
+		ThirdParty\Tracer\net6.0\TracerLibrary.dll = ThirdParty\Tracer\net6.0\TracerLibrary.dll
+		ThirdParty\Tracer\net6.0\TracerLibrary.pdb = ThirdParty\Tracer\net6.0\TracerLibrary.pdb
 	EndProjectSection
 EndProject
 Global
@@ -52,7 +54,7 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{4C1F7491-7C9E-4386-92D4-CFF88D682482} = {132F8D89-1533-4FFD-A167-169347B53B46}
-		{90403AFD-EEFD-4A07-91C9-E75B089C7072} = {4C1F7491-7C9E-4386-92D4-CFF88D682482}
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {4C1F7491-7C9E-4386-92D4-CFF88D682482}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {5C087726-9F88-4707-BFAD-966BA323036D}

@@ -20,9 +20,9 @@ namespace ClamAVLibrary
         {
         }
 
-        //public Clamd(DataLocation location) : this(location, "", 0)
-        //{
-        //}
+        public Clamd(DataLocation location) : this(location, "", 0)
+        {
+        }
 
 
         public Clamd(DataLocation location, string path) : this(location, path, 0)

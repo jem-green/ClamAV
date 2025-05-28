@@ -175,7 +175,7 @@ namespace ClamAVLibrary
 
             // Run clamd
 
-            if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined) || (_server.Mode == Component.OperatingMode.Server))
+            if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined))
             {     
                 if ((_server != null) && (_server.Enabled == true))
                 {
@@ -189,7 +189,7 @@ namespace ClamAVLibrary
 
             // Run freshclam
 
-            if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined) || (_mode == Component.OperatingMode.Standalone) && (_server.Mode != Component.OperatingMode.Server))
+            if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined) || (_mode == Component.OperatingMode.Standalone))
             {
                 if ((_refresh != null) && (_refresh.Enabled == true))
                 {
@@ -202,7 +202,7 @@ namespace ClamAVLibrary
 
             // Run updateclam
 
-            if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined) || (_server.Mode == Component.OperatingMode.Server))
+            if ((_mode == Component.OperatingMode.Server) || (_mode == Component.OperatingMode.Combined))
             {
                 if ((_update != null) && (_update.Enabled == true))
                 {
@@ -219,21 +219,7 @@ namespace ClamAVLibrary
 
             if ((_mode == Component.OperatingMode.Server))
             {
-                foreach (Component scan in _scans)
-                {
-                    // Double check the actual mode here
-                    if ((scan != null) && (scan.Enabled == true))
-                    {
-                        if ((scan.Mode == OperatingMode.Combined) || (scan.Mode == OperatingMode.Client) || (scan.Mode == OperatingMode.Standalone))
-                        {
-                            TraceInternal.TraceInformation("Run client scanner " + scan.Id);
-                            scan.WriteConfig();
-                            scan.EventReceived += new EventHandler<NotificationEventArgs>(OnMessageReceived);
-                            scan.Start();
-                        }
-                    }
-                }
-
+                TraceInternal.TraceInformation("No client scanner");
             }
             else if ((_mode == Component.OperatingMode.Combined) || (_mode == Component.OperatingMode.Client) || (_mode == Component.OperatingMode.Standalone))
             {

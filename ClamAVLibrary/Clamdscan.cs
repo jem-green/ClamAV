@@ -23,13 +23,13 @@ namespace ClamAVLibrary
         {
         }
 
-        //public ClamdScan(string id, DataLocation location) : this(id, location, "", 0)
-        //{
-        //}
+        public ClamdScan(string id, DataLocation location) : this(id, location, "", 0)
+        {
+        }
 
-        //public ClamdScan(string id, DataLocation location, int port) : this(id, DataLocation.Program, "", port)
-        //{
-        //}
+        public ClamdScan(string id, DataLocation location, string path) : this(id, DataLocation.Program, path, 0)
+        {
+        }
 
         public ClamdScan(string id, string path) : this(id, DataLocation.Program, path, 0)
         {
